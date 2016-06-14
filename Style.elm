@@ -2,11 +2,17 @@ module Style exposing (..)
 -- where
 
 sourceLine =
-  [ ("font-family", "monospace") ]
+  []
+
+
+sourceLineText =
+  []
 
 
 sourceLines =
-  [ ("flex-grow", "1") ]
+  [ ("flex-grow", "1")
+  , ("font-family", "monospace")
+  ]
 
 
 intV =
@@ -35,3 +41,7 @@ viewValue =
   , ("margin-bottom", "16px")
   , ("flex-grow", "1")
   ]
+
+
+highlightedSource =
+  [ ("color", "red") ]

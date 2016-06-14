@@ -2,6 +2,7 @@ module Viewer exposing (..)
 -- where
 
 import Dict exposing (Dict)
+import String
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -66,11 +67,50 @@ type ValuePath
 --
 
 -- TODO: source span
-viewSource : Source -> Html a
-viewSource source =
+viewSource : SourceSpan -> Source -> Html a
+viewSource sourceSpan source =
   source
-  |> List.map (\line -> li [ style Style.sourceLine ] [text line])
+  |> mapWithIndex (\idx line ->
+    li [ style Style.sourceLine ]
+      [viewSourceLine (idx + 1) sourceSpan line]
+  )
   |> ol [ style Style.sourceLines ]
+
+
+viewSourceLine : Int -> SourceSpan -> String -> Html a
+viewSourceLine lineNo sourceSpan line =
+  let
+    highlighted txt =
+      span [style Style.highlightedSource] [text txt]
+
+    normal txt =
+      text txt
+
+    length =
+      String.length line
+
+    sliceIt startIdx endIdx =
+      span []
+        [ normal (String.slice 0 startIdx line)
+        , highlighted (String.slice startIdx endIdx line)
+        , normal (String.slice endIdx length line)
+        ]
+  in
+    case (compare sourceSpan.start.line lineNo, compare sourceSpan.end.line lineNo) of
+      (LT, GT) -> -- XXXXXX
+        sliceIt 0 length
+
+      (LT, EQ) -> -- XXX...
+        sliceIt 0 sourceSpan.end.col
+
+      (EQ, EQ) -> -- ..XX..
+        sliceIt sourceSpan.start.col sourceSpan.end.col
+
+      (EQ, GT) -> -- ...XXX
+        sliceIt sourceSpan.start.col length
+
+      _ ->
+        normal line
 
 
 -- TODO: get this into list-extra
@@ -78,11 +118,16 @@ viewSource source =
 
 mapWithIndex : (Int -> a -> b) -> List a -> List b
 mapWithIndex f list =
-  List.foldl
-    (\item (idx, soFar) -> (idx + 1, f idx item :: soFar))
-    (0, [])
-    list
-  |> snd
+  let
+    go idx items =
+      case items of
+        [] ->
+          []
+
+        x::xs ->
+          (f idx x) :: (go (idx + 1) xs)
+  in
+    go 0 list
 
 
 -- TODO: this'll emit onclick events...

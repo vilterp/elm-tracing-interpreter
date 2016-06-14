@@ -13,6 +13,29 @@ source =
   [ "main = 2" ]
 
 
+testSource =
+  [ "a123456"
+  , "b123456"
+  , "c123456"
+  , "d123456"
+  , "e123456"
+  ]
+
+
+testSpan1 : SourceSpan
+testSpan1 =
+  { start = { line = 1, col = 1 }
+  , end = { line = 1, col = 5 }
+  }
+
+
+testSpan2 : SourceSpan
+testSpan2 =
+  { start = { line = 2, col = 3 }
+  , end = { line = 4, col = 3 }
+  }
+
+
 tVal =
   ( IntV 2
   , Literal
@@ -31,6 +54,6 @@ main =
 view : Model -> Html a
 view model =
   div [style [("display", "flex")]]
-    [ div [] [viewSource model.source]
+    [ div [] [viewSource testSpan2 testSource]
     , div [style Style.viewValue] [viewValue tVal]
     ]
