@@ -43,17 +43,39 @@ tVal =
   )
 
 
+update : Msg -> Model -> Model
+update msg model =
+  case msg of
+    MouseOverTrace trace ->
+      { model | overTrace = Just trace }
+
+    MouseOutTrace ->
+      { model | overTrace = Nothing }
+
+
+view : Model -> Html Msg
+view model =
+  let
+    overSpan =
+      model.overTrace
+      `Maybe.andThen` (\trace ->
+        case trace of
+          Literal sourceSpan ->
+            Just sourceSpan
+
+          _ ->
+            Nothing
+      )
+  in
+    div [style [("display", "flex")]]
+      [ div [] [viewSource overSpan source]
+      , div [style Style.viewValue] [viewValue tVal]
+      ]
+
+
 main =
   App.beginnerProgram
     { model = initialModel source tVal
     , view = view
-    , update = \msg model -> model
+    , update = update
     }
-
-
-view : Model -> Html a
-view model =
-  div [style [("display", "flex")]]
-    [ div [] [viewSource testSpan2 testSource]
-    , div [style Style.viewValue] [viewValue tVal]
-    ]

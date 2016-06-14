@@ -6,8 +6,21 @@ import String
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 
 import Style
+
+type Msg
+  = MouseOverTrace Trace
+  | MouseOutTrace
+
+
+type alias Model =
+  { rootVal : TVal
+  , stack : List StackFrame
+  , source : Source
+  , overTrace : Maybe Trace -- ...?
+  }
 
 
 type alias TVal =
@@ -41,13 +54,6 @@ type alias SourceLoc =
   }
 
 
-type alias Model =
-  { rootVal : TVal
-  , stack : List StackFrame
-  , source : Source
-  }
-
-
 type alias Source =
   List String
 
@@ -67,18 +73,18 @@ type ValuePath
 --
 
 -- TODO: source span
-viewSource : SourceSpan -> Source -> Html a
-viewSource sourceSpan source =
+viewSource : Maybe SourceSpan -> Source -> Html a
+viewSource maybeSourceSpan source =
   source
   |> mapWithIndex (\idx line ->
     li [ style Style.sourceLine ]
-      [viewSourceLine (idx + 1) sourceSpan line]
+      [viewSourceLine (idx + 1) maybeSourceSpan line]
   )
   |> ol [ style Style.sourceLines ]
 
 
-viewSourceLine : Int -> SourceSpan -> String -> Html a
-viewSourceLine lineNo sourceSpan line =
+viewSourceLine : Int -> Maybe SourceSpan -> String -> Html a
+viewSourceLine lineNo maybeSourceSpan line =
   let
     highlighted txt =
       span [style Style.highlightedSource] [text txt]
@@ -96,21 +102,26 @@ viewSourceLine lineNo sourceSpan line =
         , normal (String.slice endIdx length line)
         ]
   in
-    case (compare sourceSpan.start.line lineNo, compare sourceSpan.end.line lineNo) of
-      (LT, GT) -> -- XXXXXX
-        sliceIt 0 length
-
-      (LT, EQ) -> -- XXX...
-        sliceIt 0 sourceSpan.end.col
-
-      (EQ, EQ) -> -- ..XX..
-        sliceIt sourceSpan.start.col sourceSpan.end.col
-
-      (EQ, GT) -> -- ...XXX
-        sliceIt sourceSpan.start.col length
-
-      _ ->
+    case maybeSourceSpan of
+      Nothing ->
         normal line
+
+      Just sourceSpan ->
+        case (compare sourceSpan.start.line lineNo, compare sourceSpan.end.line lineNo) of
+          (LT, GT) -> -- XXXXXX
+            sliceIt 0 length
+
+          (LT, EQ) -> -- XXX...
+            sliceIt 0 sourceSpan.end.col
+
+          (EQ, EQ) -> -- ..XX..
+            sliceIt sourceSpan.start.col sourceSpan.end.col
+
+          (EQ, GT) -> -- ...XXX
+            sliceIt sourceSpan.start.col length
+
+          _ ->
+            normal line
 
 
 -- TODO: get this into list-extra
@@ -131,11 +142,16 @@ mapWithIndex f list =
 
 
 -- TODO: this'll emit onclick events...
-viewValue : TVal -> Html a
+viewValue : TVal -> Html Msg
 viewValue (val, trace) =
   case val of
     IntV int ->
-      span [style Style.intV] [text (toString val)]
+      span
+        [ style Style.intV
+        , onMouseEnter (MouseOverTrace trace)
+        , onMouseLeave MouseOutTrace
+        ]
+        [ text (toString int) ]
 
     StringV str ->
       span [style Style.stringV] [text str] -- TODO escape?
@@ -185,4 +201,5 @@ initialModel source tval =
   { source = source
   , rootVal = tval
   , stack = []
+  , overTrace = Nothing
   }
