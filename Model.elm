@@ -72,11 +72,11 @@ type Trace
 
 
 type alias Call =
-  { name : FuncName -- TODO: change to ClosureV
+  { name : FuncName -- TODO: change to (ClosureV, Trace), so we can trace where this closure was defined whooooo!
   , args : List TVal
   , result : TVal
-  , calls : List CallId
-  , caller : Maybe (CallId, SourceSpan) -- Nothing <=> this is main
+  , subcalls : List CallId -- TODO: change to `List (CallId, SourceSpan)`
+  , caller : Maybe (CallId, SourceSpan) -- Nothing <=> this is main TODO: remove SourceSpan
   }
 
 
@@ -101,7 +101,8 @@ type alias Source =
 
 
 type alias StackFrame =
-  { call : CallId
+  { call : Call
+  , selectedSubcall : Maybe CallId
   --, valuePath : Maybe ValuePath
   }
 
@@ -113,17 +114,21 @@ type ValuePath
 
 
 -- most recent call last
-stackForCall : CallTree -> CallId -> List Call
+stackForCall : CallTree -> CallId -> List StackFrame
 stackForCall callTree callId =
   let
-    call =
-      callTree.calls
-      |> Dict.get callId
-      |> getMaybe ("no such call " ++ toString callId)
+    go subcallId theCallId =
+      let
+        call =
+          callTree.calls
+          |> Dict.get theCallId
+          |> getMaybe ("no such call " ++ toString theCallId)
 
-    rest =
-      call.caller
-      |> Maybe.map (fst >> stackForCall callTree)
-      |> Maybe.withDefault []
+        rest =
+          call.caller
+          |> Maybe.map (fst >> go (Just theCallId))
+          |> Maybe.withDefault []
+      in
+        { call = call, selectedSubcall = subcallId } :: rest
   in
-    call :: rest
+    go Nothing callId

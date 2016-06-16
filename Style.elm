@@ -46,3 +46,11 @@ viewValue =
 
 highlightedSource =
   [ ("color", "red") ]
+
+
+subcall =
+  []
+
+
+selectedSubcall =
+  [ ("font-weight", "bold") ]

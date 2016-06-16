@@ -77,7 +77,7 @@ callTree =
             , args = []
             , result = threeTimesTwo
             , caller = Nothing
-            , calls = [1]
+            , subcalls = [1]
             }
         )
       -- fac(3) => 6
@@ -85,7 +85,7 @@ callTree =
             , args = [ literalThree ]
             , result = threeTimesTwo
             , caller = Just (0, onOneLine 7 (7, 12))
-            , calls = [2, 3, 7]
+            , subcalls = [2, 3, 7]
             }
         )
       -- n - 1 => 2
@@ -93,7 +93,7 @@ callTree =
             , args = [ literalThree, literalOne 1 ]
             , result = threeMinusOne
             , caller = Just (1, minusCallSpan)
-            , calls = []
+            , subcalls = []
             }
         )
       -- fac(2) => 2
@@ -101,15 +101,15 @@ callTree =
             , args = [ threeMinusOne ]
             , result = twoTimesOne
             , caller = Just (1, facCallSpan)
-            , calls = [4, 5, 6]
+            , subcalls = [4, 5, 6]
             }
         )
       -- 2 - 1 => 1
       , (4, { name = "-"
             , args = [ threeMinusOne, literalOne 3 ]
             , result = twoMinusOne
-            , caller = Just (1, minusCallSpan)
-            , calls = []
+            , caller = Just (3, minusCallSpan)
+            , subcalls = []
             }
         )
       -- fac(1)
@@ -117,7 +117,7 @@ callTree =
             , args = [ twoMinusOne ]
             , result = returnLiteralOne
             , caller = Just (3, facCallSpan)
-            , calls = []
+            , subcalls = []
             }
         )
       -- 2 * fac 1
@@ -125,7 +125,7 @@ callTree =
             , args = [ threeMinusOne, returnLiteralOne ]
             , result = twoTimesOne
             , caller = Just (3, timesCallSpan)
-            , calls = []
+            , subcalls = []
             }
         )
       -- 3 * fac 2
@@ -133,7 +133,7 @@ callTree =
             , args = [ literalThree, twoTimesOne ]
             , result = threeTimesTwo
             , caller = Just (1, timesCallSpan)
-            , calls = []
+            , subcalls = []
             }
         )
       ]

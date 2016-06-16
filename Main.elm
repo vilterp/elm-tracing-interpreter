@@ -5,6 +5,7 @@ import Dict exposing (Dict)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Html.App as App
 
 import Model exposing (..)
@@ -58,17 +59,20 @@ viewStack model =
       |> stackForCall model.callTree
   in
     stack
-    |> List.map (\call ->
+    |> List.map (\stackFrame ->
       li []
-        [ text (call.name ++ ":")
-        , viewStackFrame model.overTrace call
+        [ text stackFrame.call.name
+        , text ": ("
+        , viewSubcallWidget stackFrame.call.subcalls stackFrame.selectedSubcall
+        , text ")"
+        , viewStackFrame model.overTrace stackFrame
         ]
     )
     |> ul []
 
 
-viewStackFrame : Maybe Trace -> Call -> Html Msg
-viewStackFrame overTrace call =
+viewStackFrame : Maybe Trace -> StackFrame -> Html Msg
+viewStackFrame overTrace stackFrame =
   let
     viewVal val =
       div [style Style.viewValue] [viewValue overTrace val]
@@ -76,13 +80,36 @@ viewStackFrame overTrace call =
     ul []
       [ li []
           [ text "args:"
-          , ul [] (call.args |> List.map (\argVal -> li [] [viewVal argVal]))
+          , ul [] (stackFrame.call.args |> List.map (\argVal -> li [] [viewVal argVal]))
           ]
       , li []
           [ text "result:"
-          , div [style Style.viewValue] [viewVal call.result]
+          , div [style Style.viewValue] [viewVal stackFrame.call.result]
           ]
       ]
+
+
+viewSubcallWidget : List CallId -> Maybe CallId -> Html Msg
+viewSubcallWidget subcallIds maybeSelectedSubcall =
+  let
+    viewSubcallMarker subcallId =
+      let
+        theStyle =
+          if (Just subcallId) == maybeSelectedSubcall then
+            Style.selectedSubcall
+          else
+            Style.subcall
+      in
+        span
+          [ style theStyle
+          , onClick (PinCall subcallId)
+          ]
+          [ text "X" ]
+  in
+    subcallIds
+    |> List.map viewSubcallMarker
+    |> List.intersperse (text " ")
+    |> span []
 
 
 main =
