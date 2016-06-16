@@ -9,98 +9,8 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
 import Style
-
-type Msg
-  = MouseOverTrace Trace
-  | MouseOutTrace
-
-
-type alias Model =
-  { callTree : CallTree
-  , funcDefinitionSpans : FuncDefinitionSpans
-  , source : Source
-  , stack : List StackFrame
-  , overTrace : Maybe Trace -- ...?
-  }
-
-
-type alias FuncDefinitionSpans =
-  Dict FuncName SourceSpan
-
-
-type alias CallTree =
-  { calls : Dict CallId Call
-  , root : CallId
-  }
-
-
-type alias CallId =
-  Int
-
-
-type alias TVal =
-  (Val, Trace)
-
-
-type Val
-  = IntV Int
-  | StringV String
-  | ADTV
-      { constructorName : String
-      , args : List TVal
-      }
-  | RecordV (Dict String TVal)
-  | ClosureV
-      { name : Maybe String
-      , definition : SourceSpan
-      , closure : Dict String TVal
-      }
-
-
-type Trace
-  = FuncCall CallId
-  | Literal SourceSpan
-
-
-type alias Call =
-  { name : FuncName
-  , args : List TVal
-  , result : TVal
-  , calls : List CallId
-  , caller : Maybe (CallId, SourceSpan) -- Nothing <=> this is main
-  }
-
-
-type alias FuncName =
-  String
-
-
-type alias SourceSpan =
-  { start : SourceLoc
-  , end : SourceLoc
-  }
-
-
-type alias SourceLoc =
-  { line : Int
-  , col : Int
-  }
-
-
-type alias Source =
-  List String
-
-
-type alias StackFrame =
-  { valuePath : Maybe ValuePath
-  , call : CallId
-  }
-
-
-type ValuePath
-  = ConstructorArg Int
-  | RecordField String
-  | ListItem Int
+import Model exposing (..)
+import Utils exposing (..)
 
 
 -- TODO: source span
@@ -155,96 +65,69 @@ viewSourceLine lineNo maybeSourceSpan line =
             normal line
 
 
--- TODO: get this into list-extra
--- geez
-
-mapWithIndex : (Int -> a -> b) -> List a -> List b
-mapWithIndex f list =
-  let
-    go idx items =
-      case items of
-        [] ->
-          []
-
-        x::xs ->
-          (f idx x) :: (go (idx + 1) xs)
-  in
-    go 0 list
-
-
 -- TODO: this'll emit onclick events...
-viewValue : TVal -> Html Msg
-viewValue (val, trace) =
-  case val of
-    IntV int ->
-      span
-        [ style Style.intV
-        , onMouseEnter (MouseOverTrace trace)
-        , onMouseLeave MouseOutTrace
-        ]
-        [ text (toString int) ]
+viewValue : Maybe Trace -> TVal -> Html Msg
+viewValue overTrace (val, trace) =
+  let
+    pinCall =
+      case trace of
+        FuncCall callId ->
+          onClick (PinCall callId)
 
-    StringV str ->
-      span [style Style.stringV] [text str] -- TODO escape?
-
-    ADTV { constructorName, args } ->
-      let
-        argViews =
-          args
-          |> List.map viewValue
-          |> List.intersperse (text " ")
-      in
-        List.concat
-          [ [ span [style Style.constructorName] [text constructorName] ]
-          , [ text " " ]
-          , argViews
+        _ ->
+          onClick NoOp
+  in
+    case val of
+      IntV int ->
+        span
+          [ style Style.intV
+          , onMouseEnter (MouseOverTrace trace)
+          , onMouseLeave MouseOutTrace
+          , pinCall
           ]
-        |> span []
+          [ text (toString int) ]
 
-    RecordV attrs ->
-      let
-        comma =
-          span [style Style.syntax] [text ", "]
+      StringV str ->
+        span [style Style.stringV] [text str] -- TODO escape?
 
-        viewAttr (key, value) =
-          span []
-            [ span [style Style.recordKey] [text key]
-            , span [style Style.syntax] [text " = "]
-            , viewValue value
+      ADTV { constructorName, args } ->
+        let
+          argViews =
+            args
+            |> List.map (viewValue overTrace)
+            |> List.intersperse (text " ")
+        in
+          List.concat
+            [ [ span [style Style.constructorName] [text constructorName] ]
+            , [ text " " ]
+            , argViews
             ]
+          |> span []
 
-        attrViews =
-          attrs
-          |> Dict.toList
-          |> List.map viewAttr
-          |> List.intersperse comma
-      in
-        List.concat
-          [ [ span [style Style.syntax] [text "{"] ]
-          , attrViews
-          , [ span [style Style.syntax] [text "}"] ]
-          ]
-        |> span []
+      RecordV attrs ->
+        let
+          comma =
+            span [style Style.syntax] [text ", "]
 
-    ClosureV attrs ->
-      text "ClosureV (TODO)"
+          viewAttr (key, value) =
+            span []
+              [ span [style Style.recordKey] [text key]
+              , span [style Style.syntax] [text " = "]
+              , viewValue overTrace value
+              ]
 
+          attrViews =
+            attrs
+            |> Dict.toList
+            |> List.map viewAttr
+            |> List.intersperse comma
+        in
+          List.concat
+            [ [ span [style Style.syntax] [text "{"] ]
+            , attrViews
+            , [ span [style Style.syntax] [text "}"] ]
+            ]
+          |> span []
 
-getMaybe : String -> Maybe a -> a
-getMaybe msg maybe =
-  case maybe of
-    Just x ->
-      x
-
-    Nothing ->
-      Debug.crash msg
-
-
-initialModel : CallTree -> FuncDefinitionSpans -> Source -> Model
-initialModel callTree funcDefinitionSpans source =
-  { callTree = callTree
-  , funcDefinitionSpans = funcDefinitionSpans
-  , source = source
-  , stack = []
-  , overTrace = Nothing
-  }
+      ClosureV attrs ->
+        text "ClosureV (TODO)"

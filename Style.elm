@@ -38,8 +38,8 @@ recordKey =
 
 viewValue =
   [ ("font-family", "monospace")
-  , ("margin-top", "16px")
-  , ("margin-bottom", "16px")
+  --, ("margin-top", "16px")
+  --, ("margin-bottom", "16px")
   , ("flex-grow", "1")
   ]
 

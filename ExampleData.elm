@@ -3,7 +3,7 @@ module ExampleData exposing (..)
 
 import Dict exposing (Dict)
 
-import Viewer exposing (..)
+import Model exposing (..)
 
 
 source =
