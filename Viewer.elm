@@ -14,7 +14,7 @@ import Utils exposing (..)
 
 
 -- TODO: source span
-viewSource : Maybe SourceSpan -> Source -> Html a
+viewSource : Maybe (CallId, SourceSpan) -> Source -> Html a
 viewSource maybeSourceSpan source =
   source
   |> mapWithIndex (\idx line ->
@@ -24,7 +24,7 @@ viewSource maybeSourceSpan source =
   |> ol [ style Style.sourceLines ]
 
 
-viewSourceLine : Int -> Maybe SourceSpan -> String -> Html a
+viewSourceLine : Int -> Maybe (CallId, SourceSpan) -> String -> Html a
 viewSourceLine lineNo maybeSourceSpan line =
   let
     highlighted txt =
@@ -47,7 +47,7 @@ viewSourceLine lineNo maybeSourceSpan line =
       Nothing ->
         normal line
 
-      Just sourceSpan ->
+      Just (callId, sourceSpan) ->
         case (compare sourceSpan.start.line lineNo, compare sourceSpan.end.line lineNo) of
           (LT, GT) -> -- XXXXXX
             sliceIt 0 length
@@ -74,8 +74,8 @@ viewValue overTrace (val, trace) =
         FuncCall callId ->
           onClick (PinCall callId)
 
-        _ ->
-          onClick NoOp
+        Literal callId _ ->
+          onClick (PinCall callId)
   in
     case val of
       IntV int ->

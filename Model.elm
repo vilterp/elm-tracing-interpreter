@@ -67,11 +67,12 @@ type Val
 
 type Trace
   = FuncCall CallId
-  | Literal SourceSpan
+  | Literal CallId SourceSpan -- the call in which the literal was used (?)
+  -- maybe need Atom & Data?
 
 
 type alias Call =
-  { name : FuncName
+  { name : FuncName -- TODO: change to ClosureV
   , args : List TVal
   , result : TVal
   , calls : List CallId

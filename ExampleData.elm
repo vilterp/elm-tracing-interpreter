@@ -31,15 +31,15 @@ onOneLine line (startCol, endCol) =
 
 
 literalThree =
-  (IntV 3, Literal (onOneLine 7 (11, 12)))
+  (IntV 3, Literal 0 (onOneLine 7 (11, 12)))
 
 
-literalOne =
-  (IntV 1, Literal (onOneLine 5 (16, 17)))
+literalOne callId =
+  (IntV 1, Literal callId (onOneLine 5 (16, 17)))
 
 
 returnLiteralOne =
-  (IntV 1, Literal (onOneLine 3 (4, 5)))
+  (IntV 1, Literal 5 (onOneLine 3 (4, 5)))
 
 
 facCallSpan =
@@ -59,11 +59,11 @@ threeMinusOne =
 
 
 twoMinusOne =
-  (IntV 2, FuncCall 5)
+  (IntV 1, FuncCall 5)
 
 
 threeTimesTwo =
-  (IntV 6, FuncCall 3)
+  (IntV 6, FuncCall 7)
 
 
 twoTimesOne =
@@ -85,12 +85,12 @@ callTree =
             , args = [ literalThree ]
             , result = threeTimesTwo
             , caller = Just (0, onOneLine 7 (7, 12))
-            , calls = [2, 3]
+            , calls = [2, 3, 7]
             }
         )
       -- n - 1 => 2
       , (2, { name = "-"
-            , args = [ literalThree, literalOne ]
+            , args = [ literalThree, literalOne 1 ]
             , result = threeMinusOne
             , caller = Just (1, minusCallSpan)
             , calls = []
@@ -98,15 +98,15 @@ callTree =
         )
       -- fac(2) => 2
       , (3, { name = "fac"
-            , args = [ twoMinusOne ]
+            , args = [ threeMinusOne ]
             , result = twoTimesOne
             , caller = Just (1, facCallSpan)
-            , calls = [4, 6]
+            , calls = [4, 5, 6]
             }
         )
       -- 2 - 1 => 1
       , (4, { name = "-"
-            , args = [ threeMinusOne, literalOne ]
+            , args = [ threeMinusOne, literalOne 3 ]
             , result = twoMinusOne
             , caller = Just (1, minusCallSpan)
             , calls = []
@@ -116,7 +116,7 @@ callTree =
       , (5, { name = "fac"
             , args = [ twoMinusOne ]
             , result = returnLiteralOne
-            , caller = Just (2, facCallSpan)
+            , caller = Just (3, facCallSpan)
             , calls = []
             }
         )
@@ -124,7 +124,7 @@ callTree =
       , (6, { name = "*"
             , args = [ threeMinusOne, returnLiteralOne ]
             , result = twoTimesOne
-            , caller = Just (1, timesCallSpan)
+            , caller = Just (3, timesCallSpan)
             , calls = []
             }
         )

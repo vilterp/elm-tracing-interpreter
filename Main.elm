@@ -33,19 +33,19 @@ update msg model =
 view : Model -> Html Msg
 view model =
   let
-    overSpan =
+    maybeOverSpan =
       model.overTrace
       `Maybe.andThen` (\trace ->
         case trace of
-          Literal sourceSpan ->
-            Just sourceSpan
+          Literal callId sourceSpan ->
+            Just (callId, sourceSpan)
 
           _ ->
             Nothing
       )
   in
     div [style [("display", "flex")]]
-      [ div [] [ viewSource overSpan model.source ]
+      [ div [] [ viewSource maybeOverSpan model.source ]
       , div [] [ viewStack model ]
       ]
 
