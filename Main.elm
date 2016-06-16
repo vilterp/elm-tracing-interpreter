@@ -1,46 +1,15 @@
 module Main exposing (..)
 -- where
 
+import Dict exposing (Dict)
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.App as App
 
 import Viewer exposing (..)
+import ExampleData
 import Style
-
-
-source =
-  [ "main = 2" ]
-
-
-testSource =
-  [ "a123456"
-  , "b123456"
-  , "c123456"
-  , "d123456"
-  , "e123456"
-  ]
-
-
-testSpan1 : SourceSpan
-testSpan1 =
-  { start = { line = 1, col = 1 }
-  , end = { line = 1, col = 5 }
-  }
-
-
-testSpan2 : SourceSpan
-testSpan2 =
-  { start = { line = 2, col = 3 }
-  , end = { line = 4, col = 3 }
-  }
-
-
-tVal =
-  ( IntV 2
-  , Literal
-      { start = { line = 1, col = 7 }, end = { line = 1, col = 8 } }
-  )
 
 
 update : Msg -> Model -> Model
@@ -66,16 +35,23 @@ view model =
           _ ->
             Nothing
       )
+
+    outputTVal =
+      model.callTree.calls
+      |> Dict.get (model.callTree.root)
+      |> getMaybe "no root"
+      |> .result
   in
     div [style [("display", "flex")]]
-      [ div [] [viewSource overSpan source]
-      , div [style Style.viewValue] [viewValue tVal]
+      [ div [] [viewSource overSpan model.source]
+      , div [style Style.viewValue] [viewValue outputTVal]
       ]
 
 
 main =
   App.beginnerProgram
-    { model = initialModel source tVal
+    { model =
+        initialModel ExampleData.callTree ExampleData.funcDefinitionSpans ExampleData.source
     , view = view
     , update = update
     }

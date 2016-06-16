@@ -16,11 +16,26 @@ type Msg
 
 
 type alias Model =
-  { rootVal : TVal
-  , stack : List StackFrame
+  { callTree : CallTree
+  , funcDefinitionSpans : FuncDefinitionSpans
   , source : Source
+  , stack : List StackFrame
   , overTrace : Maybe Trace -- ...?
   }
+
+
+type alias FuncDefinitionSpans =
+  Dict FuncName SourceSpan
+
+
+type alias CallTree =
+  { calls : Dict CallId Call
+  , root : CallId
+  }
+
+
+type alias CallId =
+  Int
 
 
 type alias TVal =
@@ -35,11 +50,29 @@ type Val
       , args : List TVal
       }
   | RecordV (Dict String TVal)
+  | ClosureV
+      { name : Maybe String
+      , definition : SourceSpan
+      , closure : Dict String TVal
+      }
 
 
 type Trace
-  = FuncCall { name : String, args : List TVal }
+  = FuncCall CallId
   | Literal SourceSpan
+
+
+type alias Call =
+  { name : FuncName
+  , args : List TVal
+  , result : TVal
+  , calls : List CallId
+  , caller : Maybe (CallId, SourceSpan) -- Nothing <=> this is main
+  }
+
+
+type alias FuncName =
+  String
 
 
 type alias SourceSpan =
@@ -59,8 +92,8 @@ type alias Source =
 
 
 type alias StackFrame =
-  { valuePath : ValuePath
-  , tval : TVal
+  { valuePath : Maybe ValuePath
+  , call : CallId
   }
 
 
@@ -69,8 +102,6 @@ type ValuePath
   | RecordField String
   | ListItem Int
 
-
---
 
 -- TODO: source span
 viewSource : Maybe SourceSpan -> Source -> Html a
@@ -195,11 +226,25 @@ viewValue (val, trace) =
           ]
         |> span []
 
+    ClosureV attrs ->
+      text "ClosureV (TODO)"
 
-initialModel : Source -> TVal -> Model
-initialModel source tval =
-  { source = source
-  , rootVal = tval
+
+getMaybe : String -> Maybe a -> a
+getMaybe msg maybe =
+  case maybe of
+    Just x ->
+      x
+
+    Nothing ->
+      Debug.crash msg
+
+
+initialModel : CallTree -> FuncDefinitionSpans -> Source -> Model
+initialModel callTree funcDefinitionSpans source =
+  { callTree = callTree
+  , funcDefinitionSpans = funcDefinitionSpans
+  , source = source
   , stack = []
   , overTrace = Nothing
   }

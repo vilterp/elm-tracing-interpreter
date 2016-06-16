@@ -12,6 +12,7 @@ sourceLineText =
 sourceLines =
   [ ("flex-grow", "1")
   , ("font-family", "monospace")
+  , ("white-space", "pre")
   ]
 
 
