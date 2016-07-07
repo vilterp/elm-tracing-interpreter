@@ -218,13 +218,16 @@ jsonDecChar =
 
 jsonDecCanonicalType : JsDec.Decoder ( CanonicalType )
 jsonDecCanonicalType =
-    let jsonDecDictCanonical = Dict.fromList
-            [ ("Lambda", JsDec.tuple2 LambdaType (jsonDecCanonicalType) (jsonDecCanonicalType))
+    let
+        decType =
+          lazy (\_ -> jsonDecCanonicalType)
+        jsonDecDictCanonical = Dict.fromList
+            [ ("Lambda", JsDec.tuple2 LambdaType decType decType)
             , ("Var", JsDec.map VarType (JsDec.string))
-            , ("Type", JsDec.map Type (jsonDecCanonicalType))
-            , ("App", JsDec.tuple2 AppType (jsonDecCanonicalType) (JsDec.list (jsonDecCanonicalType)))
-            , ("Record", JsDec.tuple2 RecordType (JsDec.list (JsDec.tuple2 (,) (JsDec.string) (jsonDecCanonicalType))) (JsDec.maybe (jsonDecCanonicalType)))
-            , ("Aliased", JsDec.tuple3 Aliased (jsonDecCanonicalType) (JsDec.list (JsDec.tuple2 (,) (JsDec.string) (jsonDecCanonicalType))) (jsonDecAliased (jsonDecCanonicalType)))
+            , ("Type", JsDec.map Type decType)
+            , ("App", JsDec.tuple2 AppType decType (JsDec.list decType))
+            , ("Record", JsDec.tuple2 RecordType (JsDec.list (JsDec.tuple2 (,) (JsDec.string) decType)) (JsDec.maybe decType))
+            , ("Aliased", JsDec.tuple3 Aliased decType (JsDec.list (JsDec.tuple2 (,) (JsDec.string) decType)) (jsonDecAliased decType))
             ]
     in  decodeSumObjectWithSingleField  "Canonical" jsonDecDictCanonical
 
