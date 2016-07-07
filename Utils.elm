@@ -1,5 +1,5 @@
 module Utils exposing (..)
--- where
+
 
 getMaybe : String -> Maybe a -> a
 getMaybe msg maybe =
@@ -25,3 +25,14 @@ mapWithIndex f list =
           (f idx x) :: (go (idx + 1) xs)
   in
     go 0 list
+
+
+-- this is kind of silly
+getResult : Result a a -> a
+getResult res =
+  case res of
+    Ok x ->
+      x
+
+    Err y ->
+      y

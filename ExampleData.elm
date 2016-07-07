@@ -1,5 +1,5 @@
 module ExampleData exposing (..)
--- where
+
 
 import Dict exposing (Dict)
 
