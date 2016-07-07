@@ -99,37 +99,42 @@ region =
    }
 
 
+jsonDecParamExpr  : JsDec.Decoder ann -> JsDec.Decoder def -> JsDec.Decoder var -> JsDec.Decoder typ -> JsDec.Decoder ( ParamExpr ann def var typ )
+jsonDecParamExpr localDecoder_ann localDecoder_def localDecoder_var localDecoder_typ =
+  jsonDecAnnotated localDecoder_ann (jsonDecExpr' localDecoder_ann localDecoder_def localDecoder_var localDecoder_typ)
+
+
 jsonDecExpr' : JsDec.Decoder ann -> JsDec.Decoder def -> JsDec.Decoder var -> JsDec.Decoder typ -> JsDec.Decoder ( Expr' ann def var typ )
 jsonDecExpr' localDecoder_ann localDecoder_def localDecoder_var localDecoder_typ =
-   let decExpr' =
-         lazy (\_ -> jsonDecExpr' localDecoder_ann localDecoder_def localDecoder_var localDecoder_typ)
+   let decExpr =
+         lazy (\_ -> jsonDecParamExpr localDecoder_ann localDecoder_def localDecoder_var localDecoder_typ)
        decPattern =
          jsonDecPattern localDecoder_ann localDecoder_var
        jsonDecDictExpr' = Dict.fromList
-           [ ("Literal", JsDec.map Literal (jsonDecLiteral))
+           [
+             ("Literal", JsDec.map Literal (jsonDecLiteral))
            , ("Var", JsDec.map Var (localDecoder_var))
-           , ("Range", JsDec.tuple2 Range decExpr' decExpr')
-           , ("ExplicitList", JsDec.map ExplicitList (JsDec.list decExpr'))
-           , ("Binop", JsDec.tuple3 Binop (localDecoder_var) decExpr' decExpr')
-           , ("Lambda", JsDec.tuple2 Lambda decPattern decExpr')
-           , ("App", JsDec.tuple2 App decExpr' decExpr')
-           , ("If", JsDec.tuple2 If (JsDec.list (JsDec.tuple2 (,) decExpr' decExpr')) decExpr')
-           , ("Let", JsDec.tuple2 Let (JsDec.list (localDecoder_def)) decExpr')
-           , ("Case", JsDec.tuple2 Case decExpr' (JsDec.list (JsDec.tuple2 (,) decPattern decExpr')))
-           , ("Data", JsDec.tuple2 Data (JsDec.string) (JsDec.list decExpr'))
-           , ("Access", JsDec.tuple2 Access decExpr' (JsDec.string))
-           , ("Update", JsDec.tuple2 Update decExpr' (JsDec.list (JsDec.tuple2 (,) (JsDec.string) decExpr')))
-           , ("Record", JsDec.map Record (JsDec.list (JsDec.tuple2 (,) (JsDec.string) decExpr')))
+           , ("Range", JsDec.tuple2 Range decExpr decExpr)
+           , ("ExplicitList", JsDec.map ExplicitList (JsDec.list decExpr))
+           , ("Binop", JsDec.tuple3 Binop (localDecoder_var) decExpr decExpr)
+           , ("Lambda", JsDec.tuple2 Lambda decPattern decExpr)
+           , ("App", JsDec.tuple2 App decExpr decExpr)
+           , ("If", JsDec.tuple2 If (JsDec.list (JsDec.tuple2 (,) decExpr decExpr)) decExpr)
+           , ("Let", JsDec.tuple2 Let (JsDec.list (localDecoder_def)) decExpr)
+           , ("Case", JsDec.tuple2 Case decExpr (JsDec.list (JsDec.tuple2 (,) decPattern decExpr)))
+           , ("Data", JsDec.tuple2 Data (JsDec.string) (JsDec.list decExpr))
+           , ("Access", JsDec.tuple2 Access decExpr (JsDec.string))
+           , ("Update", JsDec.tuple2 Update decExpr (JsDec.list (JsDec.tuple2 (,) (JsDec.string) decExpr)))
+           , ("Record", JsDec.map Record (JsDec.list (JsDec.tuple2 (,) (JsDec.string) decExpr)))
            , ("Cmd", JsDec.map Cmd (jsonDecCanonicalModuleName))
            , ("Sub", JsDec.map Sub (jsonDecCanonicalModuleName))
            , ("OutgoingPort", JsDec.tuple2 OutgoingPort (JsDec.string) (localDecoder_typ))
            , ("IncomingPort", JsDec.tuple2 IncomingPort (JsDec.string) (localDecoder_typ))
-           , ("Program", JsDec.tuple2 Program (jsonDecMain (localDecoder_typ)) decExpr')
+           , ("Program", JsDec.tuple2 Program (jsonDecMain (localDecoder_typ)) decExpr)
            --, ("SaveEnv", JsDec.tuple2 SaveEnv (jsonDecCanonical) (jsonDecCanonical))
            --, ("GLShader", JsDec.tuple3 GLShader (JsDec.string) (JsDec.string) (jsonDecGLShaderTipe))
            ]
    in
-      --decodeSumTaggedObject "Expr'" "tag" "contents" jsonDecDictExpr' Set.empty
       decodeSumObjectWithSingleField "Expr'" jsonDecDictExpr'
 
 

@@ -70,26 +70,30 @@ type alias Expr =
   Annotated Region (Expr' Region () CanonicalVar CanonicalType)
 
 
+type alias ParamExpr ann def var typ =
+  Annotated ann (Expr' ann def var typ)
+
+
 type Expr' ann def var typ =
     Literal Literal
     | Var var
-    | Range (Expr' ann def var typ) (Expr' ann def var typ)
-    | ExplicitList (List (Expr' ann def var typ))
-    | Binop var (Expr' ann def var typ) (Expr' ann def var typ)
-    | Lambda (Pattern ann var) (Expr' ann def var typ)
-    | App (Expr' ann def var typ) (Expr' ann def var typ)
-    | If (List ((Expr' ann def var typ), (Expr' ann def var typ))) (Expr' ann def var typ)
-    | Let (List def) (Expr' ann def var typ)
-    | Case (Expr' ann def var typ) (List ((Pattern ann var), (Expr' ann def var typ)))
-    | Data String (List (Expr' ann def var typ))
-    | Access (Expr' ann def var typ) String
-    | Update (Expr' ann def var typ) (List (String, (Expr' ann def var typ)))
-    | Record (List (String, (Expr' ann def var typ)))
+    | Range (ParamExpr ann def var typ) (ParamExpr ann def var typ)
+    | ExplicitList (List (ParamExpr ann def var typ))
+    | Binop var (ParamExpr ann def var typ) (ParamExpr ann def var typ)
+    | Lambda (Pattern ann var) (ParamExpr ann def var typ)
+    | App (ParamExpr ann def var typ) (ParamExpr ann def var typ)
+    | If (List ((ParamExpr ann def var typ), (ParamExpr ann def var typ))) (ParamExpr ann def var typ)
+    | Let (List def) (ParamExpr ann def var typ)
+    | Case (ParamExpr ann def var typ) (List ((Pattern ann var), (ParamExpr ann def var typ)))
+    | Data String (List (ParamExpr ann def var typ))
+    | Access (ParamExpr ann def var typ) String
+    | Update (ParamExpr ann def var typ) (List (String, (ParamExpr ann def var typ)))
+    | Record (List (String, (ParamExpr ann def var typ)))
     | Cmd CanonicalModuleName
     | Sub CanonicalModuleName
     | OutgoingPort String typ
     | IncomingPort String typ
-    | Program (Main typ) (Expr' ann def var typ)
+    | Program (Main typ) (ParamExpr ann def var typ)
     --| SaveEnv Canonical Canonical
     --| GLShader String String GLShaderTipe
 
