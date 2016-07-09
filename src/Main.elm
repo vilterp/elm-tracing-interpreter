@@ -140,7 +140,7 @@ interpretMainYo funcDict =
     Just (Def _ pattern expr _) ->
       let
         tVal =
-          Interpret.interpretExpr 0 expr
+          Interpret.interpretExpr funcDict 0 expr
 
         calls =
           [ (0

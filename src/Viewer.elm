@@ -77,22 +77,29 @@ viewValue overTrace (val, trace) =
 
         Literal callId _ ->
           onClick (PinCall callId)
+
+    literalAttrs litStyle =
+      [ pinCall
+      , onMouseEnter (MouseOverTrace trace)
+      , onMouseLeave MouseOutTrace
+      , style litStyle
+      ]
   in
     case val of
       IntV int ->
         span
-          [ style Style.intV
-          , onMouseEnter (MouseOverTrace trace)
-          , onMouseLeave MouseOutTrace
-          , pinCall
-          ]
+          (literalAttrs Style.intV)
           [ text (toString int) ]
 
       StringV str ->
-        span [style Style.stringV] [text str] -- TODO escape?
+        span
+          (literalAttrs Style.stringV)
+          [ text ("\"" ++ str ++ "\"") ] -- TODO escape?
 
       BoolV bool ->
-        span [style Style.boolV] [text (toString bool)]
+        span
+          (literalAttrs Style.boolV)
+          [ text (toString bool) ]
 
       ADTV { constructorName, args } ->
         let
