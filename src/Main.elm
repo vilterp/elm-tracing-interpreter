@@ -1,120 +1,104 @@
-module Main exposing (..)
-
-import Dict exposing (Dict)
+module ASTDecoder exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.App as App
+import Json.Decode as JsDec
+import Json.Encode as JsEnc
+import Task
+import Http
+import HttpBuilder exposing (..)
 
-import Model exposing (..)
-import Viewer exposing (..)
-import ExampleData
-import Style
-import Utils exposing (..)
+import Elm.AST exposing (..)
+import Elm.Decode exposing (..)
+import Utils
 
 
-update : Msg -> Model -> Model
+type alias ModuleDefs =
+  List (Module (List Def))
+
+
+type alias Model =
+  { text : String
+  , ast : Loading (Error String) ModuleDefs
+  }
+
+
+type Loading a b
+  = NotStarted
+  | InProgress
+  | Returned (Result a b)
+
+
+type Msg
+  = UpdateText String
+  | Compile
+  | CompileResponse (Result (Error String) ModuleDefs)
+
+
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    MouseOverTrace trace ->
-      { model | overTrace = Just trace }
+    UpdateText txt ->
+      { model | text = txt } ! []
 
-    MouseOutTrace ->
-      { model | overTrace = Nothing }
+    Compile ->
+      let
+        body =
+          model.text
+          |> codeToJsonPayload
+          |> JsEnc.encode 0
+          |> Http.string 
+      in
+        ( { model | ast = InProgress }
+        , HttpBuilder.post "/compile_elm"
+          |> withJsonBody (codeToJsonPayload model.text)
+          |> withHeader "Content-Type" "application/json"
+          |> send (jsonReader (JsDec.list Elm.Decode.decodeModuleOfDefs)) stringReader
+          |> Task.perform
+            (\err -> CompileResponse (Err err))
+            (\res -> CompileResponse (Ok res.data))
+        )
 
-    PinCall callId ->
-      { model | pinnedCall = callId }
+    CompileResponse resp ->
+      { model | ast = Returned resp } ! []
 
-    NoOp ->
-      model
+
+codeToJsonPayload : String -> JsEnc.Value
+codeToJsonPayload code =
+  JsEnc.object [("code", JsEnc.string code)]
 
 
 view : Model -> Html Msg
 view model =
-  let
-    maybeOverSpan =
-      model.overTrace
-      `Maybe.andThen` (\trace ->
-        case trace of
-          Literal callId sourceSpan ->
-            Just (callId, sourceSpan)
+  div
+    []
+    [ textarea [ onInput UpdateText, rows 10, cols 50 ] [ text model.text ]
+    , button [ onClick Compile ] [ text "Compile" ]
+    , pre [ style [("white-space", "pre-wrap")] ]
+        [ case model.ast of
+            NotStarted ->
+              text "Write Elm code & hit 'Compile'"
 
-          _ ->
-            Nothing
-      )
-  in
-    div [style [("display", "flex")]]
-      [ div [] [ viewSource maybeOverSpan model.source ]
-      , div [] [ viewStack model ]
-      ]
+            InProgress ->
+              text "Compiling..."
 
+            Returned result ->
+              case result of
+                Ok ast ->
+                  text <| toString ast
 
-viewStack : Model -> Html Msg
-viewStack model =
-  let
-    stack =
-      model.pinnedCall
-      |> stackForCall model.callTree
-  in
-    stack
-    |> List.map (\stackFrame ->
-      li []
-        [ text stackFrame.call.name
-        , text ": ("
-        , viewSubcallWidget stackFrame.call.subcalls stackFrame.selectedSubcall
-        , text ")"
-        , viewStackFrame model.overTrace stackFrame
+                Err err ->
+                  text <| toString err
         ]
-    )
-    |> ul []
-
-
-viewStackFrame : Maybe Trace -> StackFrame -> Html Msg
-viewStackFrame overTrace stackFrame =
-  let
-    viewVal val =
-      div [style Style.viewValue] [viewValue overTrace val]
-  in
-    ul []
-      [ li []
-          [ text "args:"
-          , ul [] (stackFrame.call.args |> List.map (\argVal -> li [] [viewVal argVal]))
-          ]
-      , li []
-          [ text "result:"
-          , div [style Style.viewValue] [viewVal stackFrame.call.result]
-          ]
-      ]
-
-
-viewSubcallWidget : List CallId -> Maybe CallId -> Html Msg
-viewSubcallWidget subcallIds maybeSelectedSubcall =
-  let
-    viewSubcallMarker subcallId =
-      let
-        theStyle =
-          if (Just subcallId) == maybeSelectedSubcall then
-            Style.selectedSubcall
-          else
-            Style.subcall
-      in
-        span
-          [ style theStyle
-          , onClick (PinCall subcallId)
-          ]
-          [ text "X" ]
-  in
-    subcallIds
-    |> List.map viewSubcallMarker
-    |> List.intersperse (text " ")
-    |> span []
+    ]
 
 
 main =
-  App.beginnerProgram
-    { model =
-        initialModel ExampleData.callTree ExampleData.funcDefinitionSpans ExampleData.source
+  App.program
+    { init = ({ text = "", ast = NotStarted }, Cmd.none)
     , view = view
     , update = update
+    , subscriptions = always Sub.none
     }

@@ -39,6 +39,7 @@ app.post('/compile_elm', (req, res) => {
     console.log('dir:', tmpPath);
     fs.copy(emptyElmDir, tmpPath, () => {
       const code = req.body.code;
+      console.log('CODE:', code);
       fs.writeFile(path.join(emptyElmDir, 'Main.elm'), code, () => {
         const cmd = `${hackedMake} Main.elm --output out.json --report json`;
         console.log(cmd);
