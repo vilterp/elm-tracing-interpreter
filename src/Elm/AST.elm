@@ -1,5 +1,10 @@
 module Elm.AST exposing (..)
 
+
+type alias ModuleDefs =
+   List (Module (List Def))
+
+
 -- shit, maybe I'll have to send the whole source code of
 -- core across.
 type alias FilePath =
@@ -15,18 +20,18 @@ type alias Module phase =
 
 -- canonical module name
 type alias CanonicalModuleName  =
-   { package: Name
-   , modul: Raw
+   { package: PackageName
+   , modul: ModuleName
    }
 
 
 -- user/project
-type alias Name =
+type alias PackageName =
     String
 
 
 -- raw module name (?)
-type alias Raw =
+type alias ModuleName =
     List String
 
 

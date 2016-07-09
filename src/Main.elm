@@ -6,22 +6,20 @@ import Html.Events exposing (..)
 import Html.App as App
 import Json.Decode as JsDec
 import Json.Encode as JsEnc
+import Dict exposing (Dict)
 import Task
 import Http
 import HttpBuilder exposing (..)
 
 import Elm.AST exposing (..)
 import Elm.Decode exposing (..)
+import Elm.Interpret as Interpret exposing (FuncIdent)
 import Utils
-
-
-type alias ModuleDefs =
-  List (Module (List Def))
 
 
 type alias Model =
   { text : String
-  , ast : Loading (Error String) ModuleDefs
+  , ast : Loading (Error String) (Dict FuncIdent Def)
   }
 
 
@@ -34,7 +32,7 @@ type Loading a b
 type Msg
   = UpdateText String
   | Compile
-  | CompileResponse (Result (Error String) ModuleDefs)
+  | CompileResponse (Result (Error String) (Dict FuncIdent Def))
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -49,13 +47,18 @@ update msg model =
           model.text
           |> codeToJsonPayload
           |> JsEnc.encode 0
-          |> Http.string 
+          |> Http.string
+
+        decode =
+          Elm.Decode.decodeModuleOfDefs
+          |> JsDec.list
+          |> JsDec.map Interpret.buildFunctionDict
       in
         ( { model | ast = InProgress }
         , HttpBuilder.post "/compile_elm"
           |> withJsonBody (codeToJsonPayload model.text)
           |> withHeader "Content-Type" "application/json"
-          |> send (jsonReader (JsDec.list Elm.Decode.decodeModuleOfDefs)) stringReader
+          |> send (jsonReader decode) stringReader
           |> Task.perform
             (\err -> CompileResponse (Err err))
             (\res -> CompileResponse (Ok res.data))
@@ -76,22 +79,23 @@ view model =
     []
     [ textarea [ onInput UpdateText, rows 10, cols 50 ] [ text model.text ]
     , button [ onClick Compile ] [ text "Compile" ]
-    , pre [ style [("white-space", "pre-wrap")] ]
-        [ case model.ast of
-            NotStarted ->
-              text "Write Elm code & hit 'Compile'"
+    , case model.ast of
+        NotStarted ->
+          p [] [ text "Write Elm code & hit 'Compile'" ]
 
-            InProgress ->
-              text "Compiling..."
+        InProgress ->
+          p [] [ text "Compiling..." ]
 
-            Returned result ->
-              case result of
-                Ok ast ->
-                  text <| toString ast
+        Returned result ->
+          case result of
+            Ok ast ->
+              ast
+              |> Dict.toList
+              |> List.map (\item -> li [] [text (toString item)])
+              |> ul [ style [("font-family", "monospace")] ]
 
-                Err err ->
-                  text <| toString err
-        ]
+            Err err ->
+              text <| toString err
     ]
 
 

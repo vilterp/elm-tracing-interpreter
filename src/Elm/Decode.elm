@@ -15,7 +15,7 @@ import Elm.AST exposing (..)
 decodeModuleOfDefs : JsDec.Decoder (Module (List Def))
 decodeModuleOfDefs =
    jsonDecModule (JsDec.list jsonDecDef)
-   --jsonDecModule (jsonDecRaw)
+   --jsonDecModule (jsonDecModuleName)
 
 
 jsonDecFilePath =
@@ -32,16 +32,16 @@ jsonDecModule localDecoder_phase =
 
 jsonDecCanonicalModuleName : JsDec.Decoder ( CanonicalModuleName )
 jsonDecCanonicalModuleName =
-   ("_package" := jsonDecName) `JsDec.andThen` \p_package ->
-   ("_module" := jsonDecRaw) `JsDec.andThen` \p_module ->
+   ("_package" := jsonDecPackageName) `JsDec.andThen` \p_package ->
+   ("_module" := jsonDecModuleName) `JsDec.andThen` \p_module ->
    JsDec.succeed {package = p_package, modul = p_module}
 
 
-jsonDecName =
+jsonDecPackageName =
    JsDec.string
 
 
-jsonDecRaw =
+jsonDecModuleName =
    JsDec.list JsDec.string
 
 
