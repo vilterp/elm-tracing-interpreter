@@ -3,6 +3,7 @@ module Elm.Interpret exposing (..)
 import Dict exposing (Dict)
 
 import Elm.AST as AST exposing (..)
+import Elm.Trace as Trace exposing (..)
 import Model exposing (..)
 
 
@@ -40,13 +41,13 @@ interpretExpr currentCallId (A region expr) =
     AST.Literal literal ->
       case literal of
         IntNum x ->
-          (IntV x, Model.Literal currentCallId region)
+          (IntV x, Trace.Literal currentCallId region)
 
         Str str ->
-          (StringV str, Model.Literal currentCallId region)
+          (StringV str, Trace.Literal currentCallId region)
 
         Boolean b ->
-          (BoolV b, Model.Literal currentCallId region)
+          (BoolV b, Trace.Literal currentCallId region)
 
         _ ->
           Debug.crash "TODO"

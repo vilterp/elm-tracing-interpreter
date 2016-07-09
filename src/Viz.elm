@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Viz exposing (..)
 
 import Dict exposing (Dict)
 
@@ -7,11 +7,12 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Html.App as App
 
+import Elm.Trace exposing (..)
 import Model exposing (..)
 import Viewer exposing (..)
-import ExampleData
 import Style
 import Utils exposing (..)
+--import ExampleData
 
 
 update : Msg -> Model -> Model
@@ -26,12 +27,15 @@ update msg model =
     PinCall callId ->
       { model | pinnedCall = callId }
 
+    RequestEdit ->
+      model
+
     NoOp ->
       model
 
 
-view : Model -> Html Msg
-view model =
+view : Model -> CallTree -> TVal -> Source -> FuncDict -> Html Msg
+view model callTree tVal source funcDict =
   let
     maybeOverSpan =
       model.overTrace
@@ -45,17 +49,20 @@ view model =
       )
   in
     div [style [("display", "flex")]]
-      [ div [] [ viewSource maybeOverSpan model.source ]
-      , div [] [ viewStack model ]
+      [ div []
+          [ div [] [ viewSource maybeOverSpan source ]
+          , button [ onClick RequestEdit ] [ text "Edit" ]
+          ]
+      , div [] [ viewStack model callTree ]
       ]
 
 
-viewStack : Model -> Html Msg
-viewStack model =
+viewStack : Model -> CallTree -> Html Msg
+viewStack model callTree =
   let
     stack =
       model.pinnedCall
-      |> stackForCall model.callTree
+      |> stackForCall callTree
   in
     stack
     |> List.map (\stackFrame ->
@@ -111,10 +118,10 @@ viewSubcallWidget subcallIds maybeSelectedSubcall =
     |> span []
 
 
-main =
-  App.beginnerProgram
-    { model =
-        initialModel ExampleData.callTree ExampleData.funcDefinitionSpans ExampleData.source
-    , view = view
-    , update = update
-    }
+--main =
+--  App.beginnerProgram
+--    { model =
+--        initialModel ExampleData.callTree ExampleData.funcDefinitionSpans ExampleData.source
+--    , view = view
+--    , update = update
+--    }

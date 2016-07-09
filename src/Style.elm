@@ -17,11 +17,15 @@ sourceLines =
 
 
 intV =
-  []
+  [("color", "blue")]
 
 
 stringV =
-  []
+  [("color", "green")]
+
+
+boolV =
+  [("color", "blue")]
 
 
 constructorName = 
