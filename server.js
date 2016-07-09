@@ -35,23 +35,22 @@ const hackedMake = path.join(path.dirname(process.argv[1]), 'hacked-compiler', '
 
 app.post('/compile_elm', (req, res) => {
 
-  tmp.dir((err, tmpPath, cleanupCallback) => {
-    console.log('dir:', tmpPath);
-    fs.copy(emptyElmDir, tmpPath, () => {
+  tmp.dir((err, tmpDir, cleanupCallback) => {
+    console.log('dir:', tmpDir);
+    fs.copy(emptyElmDir, tmpDir, () => {
       const code = req.body.code;
       console.log('CODE:', code);
-      fs.writeFile(path.join(emptyElmDir, 'Main.elm'), code, () => {
-        const cmd = `${hackedMake} Main.elm --output out.json --report json`;
+      fs.writeFile(path.join(tmpDir, 'Main.elm'), code, () => {
+        const cmd = `${hackedMake} Main.elm --output out.json`;
         console.log(cmd);
-        childProcess.exec(cmd, { cwd: emptyElmDir }, (error, stdout, stderr) => {
+        childProcess.exec(cmd, { cwd: tmpDir }, (error, stdout, stderr) => {
           if (error && error.code !== 0) {
             res.status(400);
-            res.set('Content-Type', 'application/json');
-            res.send(stdout);
+            res.send(stdout + stderr);
             console.log('ERRORS:', stdout);
           } else {
             res.status(200);
-            res.sendFile(path.join(emptyElmDir, 'out.json'));
+            res.sendFile(path.join(tmpDir, 'out.json'));
             console.log('SUCCESS');
           }
         });

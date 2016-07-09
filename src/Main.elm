@@ -18,6 +18,7 @@ import Elm.Interpret as Interpret
 import Elm.Trace exposing (..)
 import Model exposing (..)
 import Viz
+import ViewCompileErrors
 import Utils
 
 
@@ -221,7 +222,20 @@ view model =
             div []
               [ editor
               , compileButton
-              , p [] [ text <| toString err ]
+              , case err of
+                  BadResponse resp ->
+                    case resp.status of
+                      400 ->
+                        ViewCompileErrors.view resp.data
+
+                      _ ->
+                        p []
+                          [ text "Bad Response:"
+                          , text (toString resp)
+                          ]
+
+                  _ ->
+                    p [] [ text (toString err) ]
               ]
 
 
