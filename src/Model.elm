@@ -2,6 +2,15 @@ module Model exposing (..)
 
 import Dict exposing (Dict)
 import Utils exposing (..)
+import Elm.AST as AST
+
+
+type alias FuncDict =
+  Dict FuncIdent AST.Def
+
+
+type alias FuncIdent =
+  (AST.PackageName, AST.ModuleName, String)
 
 
 type Msg
@@ -11,28 +20,22 @@ type Msg
   | NoOp
 
 
-type alias Model =
-  { callTree : CallTree
-  , funcDefinitionSpans : FuncDefinitionSpans
-  , source : Source
-  , pinnedCall : CallId
-  , overTrace : Maybe Trace
-  }
+--type alias Model =
+--  { callTree : CallTree
+--  , pinnedCall : CallId
+--  , overTrace : Maybe Trace
+--  }
 
 
-initialModel : CallTree -> FuncDefinitionSpans -> Source -> Model
-initialModel callTree funcDefinitionSpans source =
-  { callTree = callTree
-  , funcDefinitionSpans = funcDefinitionSpans
-  , source = source
-  , pinnedCall = callTree.root
-  --, pinnedCall = 6
-  , overTrace = Nothing
-  }
-
-
-type alias FuncDefinitionSpans =
-  Dict FuncName SourceSpan
+--initialModel : CallTree -> FuncDefinitionSpans -> Source -> Model
+--initialModel callTree funcDefinitionSpans source =
+--  { callTree = callTree
+--  , funcDefinitionSpans = funcDefinitionSpans
+--  , source = source
+--  , pinnedCall = callTree.root
+--  --, pinnedCall = 6
+--  , overTrace = Nothing
+--  }
 
 
 type alias CallTree =
@@ -52,6 +55,7 @@ type alias TVal =
 type Val
   = IntV Int
   | StringV String
+  | BoolV Bool
   | ADTV
       { constructorName : String
       , args : List TVal
@@ -59,14 +63,14 @@ type Val
   | RecordV (Dict String TVal)
   | ClosureV
       { name : Maybe String
-      , definition : SourceSpan
+      , definition : AST.Region
       , closure : Dict String TVal
       }
 
 
 type Trace
   = FuncCall CallId
-  | Literal CallId SourceSpan -- the call in which the literal was used (?)
+  | Literal CallId AST.Region -- the call in which the literal was used (?)
   -- maybe need Atom & Data?
 
 
@@ -74,25 +78,13 @@ type alias Call =
   { name : FuncName -- TODO: change to (ClosureV, Trace), so we can trace where this closure was defined whooooo!
   , args : List TVal
   , result : TVal
-  , subcalls : List CallId -- TODO: change to `List (CallId, SourceSpan)`
-  , caller : Maybe (CallId, SourceSpan) -- Nothing <=> this is main TODO: remove SourceSpan
+  , subcalls : List CallId -- TODO: change to `List (CallId, AST.Region)`
+  , caller : Maybe (CallId, AST.Region) -- Nothing <=> this is main TODO: remove AST.Region
   }
 
 
 type alias FuncName =
   String
-
-
-type alias SourceSpan =
-  { start : SourceLoc
-  , end : SourceLoc
-  }
-
-
-type alias SourceLoc =
-  { line : Int
-  , col : Int
-  }
 
 
 type alias Source =

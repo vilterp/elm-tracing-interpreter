@@ -2,11 +2,8 @@ module Elm.Interpret exposing (..)
 
 import Dict exposing (Dict)
 
-import Elm.AST exposing (..)
-
-
-type alias FuncIdent =
-  (PackageName, ModuleName, String)
+import Elm.AST as AST exposing (..)
+import Model exposing (..)
 
 
 buildFunctionDict : ModuleDefs -> Dict FuncIdent Def
@@ -35,3 +32,24 @@ buildFunctionDict modules =
     |> List.map getModuleDefs
     |> List.concat
     |> Dict.fromList
+
+
+interpretExpr : CallId -> Expr -> TVal
+interpretExpr currentCallId (A region expr) =
+  case expr of
+    AST.Literal literal ->
+      case literal of
+        IntNum x ->
+          (IntV x, Model.Literal currentCallId region)
+
+        Str str ->
+          (StringV str, Model.Literal currentCallId region)
+
+        Boolean b ->
+          (BoolV b, Model.Literal currentCallId region)
+
+        _ ->
+          Debug.crash "TODO"
+
+    _ ->
+      Debug.crash "TODO"

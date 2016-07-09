@@ -13,13 +13,14 @@ import HttpBuilder exposing (..)
 
 import Elm.AST exposing (..)
 import Elm.Decode exposing (..)
-import Elm.Interpret as Interpret exposing (FuncIdent)
+import Elm.Interpret as Interpret
+import Model exposing (FuncIdent, FuncDict)
 import Utils
 
 
 type alias Model =
   { text : String
-  , ast : Loading (Error String) (Dict FuncIdent Def)
+  , ast : Loading (Error String) FuncDict
   }
 
 
@@ -32,7 +33,7 @@ type Loading a b
 type Msg
   = UpdateText String
   | Compile
-  | CompileResponse (Result (Error String) (Dict FuncIdent Def))
+  | CompileResponse (Result (Error String) FuncDict)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -68,6 +69,24 @@ update msg model =
       { model | ast = Returned resp } ! []
 
 
+type InterpError
+  = NoMainYo
+
+
+interpretMainYo : FuncDict -> Result InterpError (Model.CallTree, Model.TVal)
+interpretMainYo funcDict =
+  case Dict.get ("user/project", ["Main"], "mainYo") funcDict of
+    Just (Def _ pattern expr _) ->
+      let
+        tVal =
+          Interpret.interpretExpr 0 expr
+      in
+        Ok ({ calls = Dict.empty, root = 0 }, tVal)
+
+    Nothing ->
+      Err NoMainYo
+
+
 codeToJsonPayload : String -> JsEnc.Value
 codeToJsonPayload code =
   JsEnc.object [("code", JsEnc.string code)]
@@ -89,13 +108,23 @@ view model =
         Returned result ->
           case result of
             Ok ast ->
-              ast
-              |> Dict.toList
-              |> List.map (\item -> li [] [text (toString item)])
-              |> ul [ style [("font-family", "monospace")] ]
+              let
+                astView =
+                  ast
+                  |> Dict.toList
+                  |> List.map (\item -> li [] [text (toString item)])
+                  |> ul [ style [("font-family", "monospace")] ]
+
+                interpResult =
+                  interpretMainYo ast
+              in
+                div []
+                  [ p [] [ text (toString interpResult) ]
+                  , astView
+                  ]
 
             Err err ->
-              text <| toString err
+              p [] [ text <| toString err ]
     ]
 
 
