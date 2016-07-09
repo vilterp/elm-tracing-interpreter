@@ -43,11 +43,11 @@ app.post('/compile_elm', (req, res) => {
         const cmd = `${hackedMake} Main.elm --output out.json --report json`;
         console.log(cmd);
         childProcess.exec(cmd, { cwd: emptyElmDir }, (error, stdout, stderr) => {
-          console.log('AND THE elm-make IS:', stdout);
           if (error && error.code !== 0) {
             res.status(400);
-            res.send(stderr);
-            console.log('ERRORS:', stderr);
+            res.set('Content-Type', 'application/json');
+            res.send(stdout);
+            console.log('ERRORS:', stdout);
           } else {
             res.status(200);
             res.sendFile(path.join(emptyElmDir, 'out.json'));
