@@ -51,21 +51,14 @@ initialState =
   }
 
 
-addCall : Region -> Call -> InterpState -> InterpState
-addCall region call state =
-  let
-    d = Debug.log "addCall" call
-    newCallId =
-      state.currentCallId + 1
-  in
-    { state |
-        callTree =
-          state.callTree |> Dict.insert state.currentCallId call,
-        currentCallId =
-          newCallId,
-        unlinked =
-          (newCallId, region) :: state.unlinked
-    }
+addCall : CallId -> Region -> Call -> InterpState -> InterpState
+addCall theCallId region call state =
+  { state |
+      callTree =
+        state.callTree |> Dict.insert theCallId call,
+      unlinked =
+        (theCallId, region) :: state.unlinked
+  }
 
 
 interpretExpr : FuncDict -> Scope -> InterpState -> Expr -> (TVal, InterpState)
@@ -216,7 +209,7 @@ interpretExpr funcDict scope state (A region expr) =
               in
                 ( (result, FuncCall freshCallId innerTrace)
                 , newNewNewState
-                  |> addCall region newCall
+                  |> addCall freshCallId region newCall
                   |> Debug.log "newnewnewnewstate"
                 )
 
