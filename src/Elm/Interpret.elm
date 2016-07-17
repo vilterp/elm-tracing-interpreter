@@ -53,6 +53,22 @@ interpretExpr funcDict currentCallId (A region expr) =
         _ ->
           Debug.crash "TODO"
 
+    AST.Var { home, name } ->
+      case home of
+        TopLevelHome moduleName ->
+          let
+            funcIdent =
+              (moduleName.package, moduleName.modul, name)
+          in
+            funcDict
+            |> Dict.get funcIdent
+            |> Utils.getMaybe "func not found"
+            |> (\(AST.Def _ _ expr _) -> expr)
+            |> interpretExpr funcDict currentCallId
+
+        _ ->
+          Debug.crash "TODO: scopes"
+
     --AST.Binop op leftExpr rightExpr ->
     --  -- TODO: fake regions
     --  interpretExpr funcDict 0 (App (App op leftExpr) rightExpr)
