@@ -72,7 +72,7 @@ viewValue overTrace (val, trace) =
   let
     pinCall =
       case trace of
-        FuncCall callId ->
+        FuncCall callId innerTrace ->
           onClick (PinCall callId)
 
         Literal callId _ ->

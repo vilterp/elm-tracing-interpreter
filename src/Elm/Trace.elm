@@ -19,9 +19,7 @@ type alias FuncIdent =
 
 
 type alias CallTree =
-  { calls : Dict CallId Call
-  , root : CallId
-  }
+  Dict CallId Call
 
 
 type alias CallId =
@@ -56,14 +54,15 @@ type Trace
   = FuncCall CallId Trace -- inner trace...
   | Literal CallId AST.Region -- the call in which the literal was used (?)
   -- maybe need Atom & Data?
+  -- TODO: case branch & if branch
 
 
 type alias Call =
   { name : FuncName -- TODO: change to (ClosureV, Trace), so we can trace where this closure was defined whooooo!
   , args : List TVal
   , result : TVal
-  , subcalls : List CallId -- TODO: change to `List (CallId, AST.Region)`
-  , caller : Maybe (CallId, AST.Region) -- Nothing <=> this is main TODO: remove AST.Region
+  , subcalls : List (CallId, AST.Region)
+  , caller : Maybe CallId
   }
 
 
@@ -95,13 +94,13 @@ stackForCall callTree callId =
     go subcallId theCallId =
       let
         call =
-          callTree.calls
+          callTree
           |> Dict.get theCallId
           |> getMaybe ("no such call " ++ toString theCallId)
 
         rest =
           call.caller
-          |> Maybe.map (fst >> go (Just theCallId))
+          |> Maybe.map (go (Just theCallId))
           |> Maybe.withDefault []
       in
         { call = call, selectedSubcall = subcallId } :: rest

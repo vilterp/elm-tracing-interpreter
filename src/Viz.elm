@@ -54,27 +54,24 @@ view model callTree tVal source funcDict =
           , button [ onClick RequestEdit ] [ text "Edit" ]
           ]
       , div [] [ viewStack model callTree ]
+      --, text (toString callTree)
       ]
 
 
 viewStack : Model -> CallTree -> Html Msg
 viewStack model callTree =
-  let
-    stack =
-      model.pinnedCall
-      |> stackForCall callTree
-  in
-    stack
-    |> List.map (\stackFrame ->
-      li []
-        [ text stackFrame.call.name
-        , text ": ("
-        , viewSubcallWidget stackFrame.call.subcalls stackFrame.selectedSubcall
-        , text ")"
-        , viewStackFrame model.overTrace stackFrame
-        ]
-    )
-    |> ul []
+  model.pinnedCall
+  |> stackForCall callTree
+  |> List.map (\stackFrame ->
+    li []
+      [ text stackFrame.call.name
+      , text ": ("
+      , viewSubcallWidget (List.map fst stackFrame.call.subcalls) stackFrame.selectedSubcall
+      , text ")"
+      , viewStackFrame model.overTrace stackFrame
+      ]
+  )
+  |> ul []
 
 
 viewStackFrame : Maybe Trace -> StackFrame -> Html Msg

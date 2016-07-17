@@ -139,22 +139,24 @@ interpretMainYo funcDict =
   case Dict.get ("user/project", ["Main"], "mainYo") funcDict of
     Just (Def _ pattern expr _) ->
       let
-        tVal =
-          Interpret.interpretExpr funcDict Dict.empty 0 expr
+        (tVal, finalState) =
+          Interpret.interpretExpr funcDict Dict.empty Interpret.initialState expr
 
-        calls =
-          [ (0
-            , { name = "mainYo"
-              , args = []
-              , result = tVal
-              , subcalls = []
-              , caller = Nothing
-              }
-            )
-          ]
-          |> Dict.fromList
+        rootCall =
+          { name = "mainYo"
+          , args = []
+          , result = tVal
+          , subcalls = finalState.unlinked
+          , caller = Nothing
+          }
+
+        stateWithRootCall =
+          { finalState | callTree =
+              finalState.callTree
+              |> Dict.insert 0 rootCall
+          }
       in
-        Ok ({ calls = calls, root = 0 }, tVal)
+        Ok (stateWithRootCall.callTree, tVal)
 
     Nothing ->
       Err NoMainYo
@@ -196,6 +198,7 @@ view model =
               astView =
                 funcDict
                 |> Dict.toList
+                |> List.reverse
                 |> List.map (\item -> li [] [text (toString item)])
                 |> ul [ style [("font-family", "monospace")] ]
             in
@@ -240,7 +243,10 @@ view model =
 
 
 initialModel =
-  { code = "mainYo = 2"
+  { code =
+      """mainYo = f True 2
+
+f y x = if y then x else 5"""
   , result = NotStarted
   }
 
