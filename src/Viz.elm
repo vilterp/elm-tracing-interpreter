@@ -54,7 +54,7 @@ view model callTree tVal source funcDict =
           , button [ onClick RequestEdit ] [ text "Edit" ]
           ]
       , div [] [ viewStack model callTree ]
-      --, text (toString callTree)
+      , text (toString (Dict.keys callTree))
       ]
 
 

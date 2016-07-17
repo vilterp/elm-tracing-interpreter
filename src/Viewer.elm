@@ -79,7 +79,7 @@ viewValue overTrace (val, trace) =
           onClick (PinCall callId)
 
         _ ->
-          Debug.crash "TODO"
+          Debug.log "TODO: what to pin when they click an if trace?" (onClick NoOp)
 
     literalAttrs litStyle =
       [ pinCall

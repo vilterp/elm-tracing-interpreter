@@ -34,7 +34,7 @@ interpretMainYo funcDict =
           , name = Just "mainYo"
           , args = []
           , result = tVal
-          , subcalls = finalState.unlinked
+          , subcalls = finalState.subcallsAtThisLevel
           , caller = Nothing
           }
 
@@ -53,7 +53,7 @@ interpretMainYo funcDict =
 type alias InterpState =
   { currentCallId : CallId
   , callTree : CallTree
-  , unlinked : List (CallId, AST.Region)
+  , subcallsAtThisLevel : List (CallId, AST.Region)
   }
 
 
@@ -61,20 +61,11 @@ initialState : InterpState
 initialState =
   { currentCallId = 0
   , callTree = Dict.empty
-  , unlinked = []
+  , subcallsAtThisLevel = []
   }
 
 
-addCall : CallId -> Region -> Call -> InterpState -> InterpState
-addCall theCallId region call state =
-  { state |
-      callTree =
-        state.callTree |> Dict.insert theCallId call,
-      unlinked =
-        (theCallId, region) :: state.unlinked
-  }
-
-
+-- whoooo giant case expr
 interpretExpr : FuncDict -> Scope -> InterpState -> Expr -> (TVal, InterpState)
 interpretExpr funcDict scope state locatedExpr =
   let
@@ -203,7 +194,7 @@ interpretExpr funcDict scope state locatedExpr =
             interpretSubexpr newState argExpr
 
           freshCallId =
-            state.currentCallId + 1
+            newNewState.currentCallId + 1
 
           d = 
             Debug.log "freshCallId" freshCallId
@@ -221,7 +212,7 @@ interpretExpr funcDict scope state locatedExpr =
                   interpretExpr
                     funcDict
                     totalScope
-                    { newNewState | currentCallId = freshCallId, unlinked = [] }
+                    { newNewState | currentCallId = freshCallId, subcallsAtThisLevel = [] }
                     closureAttrs.lambda.expr
 
                 newCall =
@@ -229,16 +220,20 @@ interpretExpr funcDict scope state locatedExpr =
                   , name = Nothing
                   , args = [arg]
                   , result = (result, innerTrace)
-                  , subcalls = newNewNewState.unlinked
+                  , subcalls = newNewNewState.subcallsAtThisLevel
                   , caller = Just state.currentCallId
                   }
 
                 -- make a new call, return it in subcalls
               in
                 ( (result, FuncCallT freshCallId innerTrace)
-                , newNewNewState
-                  |> addCall freshCallId region newCall
-                  |> Debug.log "newnewnewnewstate"
+                , { currentCallId = newNewNewState.currentCallId
+                  , callTree =
+                      newNewNewState.callTree
+                      |> Dict.insert freshCallId newCall
+                  , subcallsAtThisLevel =
+                      newNewState.subcallsAtThisLevel ++ [(freshCallId, region)]
+                  }
                 )
 
             _ ->
