@@ -31,7 +31,7 @@ type alias Model =
 type alias ResultModel =
   { funcDict : FuncDict
   , source : Elm.Trace.Source
-  , interpResult : Result InterpError (CallTree, TVal)
+  , interpResult : Result Interpret.InterpError (CallTree, TVal)
   , vizModel : Model.Model
   }
 
@@ -96,7 +96,7 @@ update msg model =
             { model | result =
                 { funcDict = funcDict
                 , source = String.split "\n" code
-                , interpResult = interpretMainYo funcDict
+                , interpResult = Interpret.interpretMainYo funcDict
                 , vizModel = Model.initialModel
                 }
                 |> Ok
@@ -128,38 +128,6 @@ update msg model =
 
             _ ->
               model ! []
-
-
-type InterpError
-  = NoMainYo
-
-
-interpretMainYo : FuncDict -> Result InterpError (CallTree, TVal)
-interpretMainYo funcDict =
-  case Dict.get ("user/project", ["Main"], "mainYo") funcDict of
-    Just (Def _ pattern expr _) ->
-      let
-        (tVal, finalState) =
-          Interpret.interpretExpr funcDict Dict.empty Interpret.initialState expr
-
-        rootCall =
-          { name = "mainYo"
-          , args = []
-          , result = tVal
-          , subcalls = finalState.unlinked
-          , caller = Nothing
-          }
-
-        stateWithRootCall =
-          { finalState | callTree =
-              finalState.callTree
-              |> Dict.insert 0 rootCall
-          }
-      in
-        Ok (stateWithRootCall.callTree, tVal)
-
-    Nothing ->
-      Err NoMainYo
 
 
 codeToJsonPayload : String -> JsEnc.Value

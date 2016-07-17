@@ -64,7 +64,10 @@ viewStack model callTree =
   |> stackForCall callTree
   |> List.map (\stackFrame ->
     li []
-      [ text stackFrame.call.name
+      [ stackFrame.call.name
+        |> Maybe.withDefault ""
+        |> \name -> strong [] [text name]
+      , viewValue Nothing (ClosureV (fst stackFrame.call.closure), snd stackFrame.call.closure)
       , text ": ("
       , viewSubcallWidget (List.map fst stackFrame.call.subcalls) stackFrame.selectedSubcall
       , text ")"

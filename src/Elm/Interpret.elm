@@ -8,32 +8,46 @@ import Elm.Trace as Trace exposing (..)
 import Model exposing (..)
 
 
-buildFunctionDict : ModuleDefs -> Dict FuncIdent Def
-buildFunctionDict modules =
-  let
-    getModuleDefs : Module (List Def) -> List (FuncIdent, Def)
-    getModuleDefs { name, info } =
-      info
-      |> List.map (\def ->
-        let
-          funcName =
-            case def of
-              Def _ (A _ (VarPattern name)) _ _ ->
-                name
+type InterpError
+  = NoMainYo
 
-              _ ->
-                Debug.crash "couldn't find function name"
 
-          funcIdent =
-            (name.package, name.modul, funcName)
-        in
-          (funcIdent, def)
-      )
-  in
-    modules
-    |> List.map getModuleDefs
-    |> List.concat
-    |> Dict.fromList
+interpretMainYo : FuncDict -> Result InterpError (CallTree, TVal)
+interpretMainYo funcDict =
+  case Dict.get ("user/project", ["Main"], "mainYo") funcDict of
+    Just (Def _ pattern expr _) ->
+      let
+        (tVal, finalState) =
+          interpretExpr funcDict Dict.empty initialState expr
+
+        (A region _) =
+          expr
+
+        rootCall =
+          { closure =
+              ( { sourceRegion = region
+                , closureScope = Dict.empty
+                , lambda = { varName = "", expr = expr }
+                }
+              , Trace.Literal -1 region -- behind the bubbles of spacetime...
+              )
+          , name = Just "mainYo"
+          , args = []
+          , result = tVal
+          , subcalls = finalState.unlinked
+          , caller = Nothing
+          }
+
+        stateWithRootCall =
+          { finalState | callTree =
+              finalState.callTree
+              |> Dict.insert 0 rootCall
+          }
+      in
+        Ok (stateWithRootCall.callTree, tVal)
+
+    Nothing ->
+      Err NoMainYo
 
 
 type alias InterpState =
@@ -182,7 +196,7 @@ interpretExpr funcDict scope state (A region expr) =
             Debug.log "freshCallId" freshCallId
         in
           case fun of
-            (ClosureV closureAttrs, _) ->
+            (ClosureV closureAttrs, closureTrace) ->
               let
                 paramScope =
                   Dict.fromList [(closureAttrs.lambda.varName, arg)]
@@ -198,7 +212,8 @@ interpretExpr funcDict scope state (A region expr) =
                     closureAttrs.lambda.expr
 
                 newCall =
-                  { name = "<lol dunno what name is>"
+                  { closure = (closureAttrs, closureTrace)
+                  , name = Nothing
                   , args = [arg]
                   , result = (result, innerTrace)
                   , subcalls = newNewNewState.unlinked
@@ -263,3 +278,31 @@ getVarName pattern =
 
     _ ->
       Nothing
+
+
+buildFunctionDict : ModuleDefs -> Dict FuncIdent Def
+buildFunctionDict modules =
+  let
+    getModuleDefs : Module (List Def) -> List (FuncIdent, Def)
+    getModuleDefs { name, info } =
+      info
+      |> List.map (\def ->
+        let
+          funcName =
+            case def of
+              Def _ (A _ (VarPattern name)) _ _ ->
+                name
+
+              _ ->
+                Debug.crash "couldn't find function name"
+
+          funcIdent =
+            (name.package, name.modul, funcName)
+        in
+          (funcIdent, def)
+      )
+  in
+    modules
+    |> List.map getModuleDefs
+    |> List.concat
+    |> Dict.fromList

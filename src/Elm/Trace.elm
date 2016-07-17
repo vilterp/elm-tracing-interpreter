@@ -39,15 +39,18 @@ type Val
       , args : List TVal
       }
   | RecordV (Dict String TVal)
-  | ClosureV
-      { sourceRegion : AST.Region
-      , closureScope : Scope
-      , lambda :
-          { varName : String
-          , expr : AST.Expr
-          }
-      -- , TODO: name
+  | ClosureV ClosureAttrs
+
+
+type alias ClosureAttrs =
+  { sourceRegion : AST.Region
+  , closureScope : Scope
+  , lambda :
+      { varName : String
+      , expr : AST.Expr
       }
+  -- , TODO: name
+  }
 
 
 type Trace
@@ -58,7 +61,8 @@ type Trace
 
 
 type alias Call =
-  { name : FuncName -- TODO: change to (ClosureV, Trace), so we can trace where this closure was defined whooooo!
+  { closure : (ClosureAttrs, Trace)
+  , name : Maybe String -- TODO: could find name based on closure's lambda's expression...
   , args : List TVal
   , result : TVal
   , subcalls : List (CallId, AST.Region)
