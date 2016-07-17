@@ -42,9 +42,10 @@ type Val
       }
   | RecordV (Dict String TVal)
   | ClosureV
-      { name : Maybe String
-      , definition : AST.Region
-      , closure : Dict String TVal
+      { sourceRegion : AST.Region
+      , closureScope : Scope
+      , lambda : (String, AST.Expr)
+      -- , TODO: name
       }
 
 

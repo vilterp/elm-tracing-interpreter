@@ -118,6 +118,31 @@ interpretExpr funcDict scope currentCallId (A region expr) =
       in
         tryBranches branches
 
+    --AST.App funExpr argExpr ->
+    --  let
+    --    fun =
+    --      interpretExpr funcDict scope currentCallId funExpr
+
+    --    arg =
+    --      interpretExpr funcDict scope currentCallId argExpr
+
+    --    freshCallId =
+    --      currentCallId + 1
+    --  in
+    --    interpretExpr XXX
+
+    AST.Lambda (AST.A _ pattern) bodyExpr ->
+      ( ClosureV
+          { sourceRegion = region
+          , closureScope = scope
+          , lambda =
+              ( getVarName pattern |> Utils.getMaybe "not a var pattern"
+              , bodyExpr
+              )
+          }
+      , Trace.Literal currentCallId region
+      )
+
     --AST.Binop op leftExpr rightExpr ->
     --  -- TODO: fake regions
     --  interpretExpr funcDict 0 (App (App op leftExpr) rightExpr)

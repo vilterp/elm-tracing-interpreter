@@ -141,4 +141,21 @@ viewValue overTrace (val, trace) =
           |> span []
 
       ClosureV attrs ->
-        text "ClosureV (TODO)"
+        span
+          (literalAttrs [])
+          [ text "<Closure scope:{"
+          , span []
+              ( attrs.closureScope
+                |> Dict.toList
+                |> List.map
+                    (\(name, tVal) ->
+                      span []
+                        [ text name
+                        , text ": "
+                        , viewValue overTrace tVal
+                        ]
+                    )
+                |> List.intersperse (text ", ")
+              )
+          , text "}>"
+          ]
