@@ -44,13 +44,16 @@ type Val
   | ClosureV
       { sourceRegion : AST.Region
       , closureScope : Scope
-      , lambda : (String, AST.Expr)
+      , lambda :
+          { varName : String
+          , expr : AST.Expr
+          }
       -- , TODO: name
       }
 
 
 type Trace
-  = FuncCall CallId
+  = FuncCall CallId Trace -- inner trace...
   | Literal CallId AST.Region -- the call in which the literal was used (?)
   -- maybe need Atom & Data?
 

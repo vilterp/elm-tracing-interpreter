@@ -38,7 +38,7 @@ buildFunctionDict modules =
 
 interpretExpr : FuncDict -> Scope -> CallId -> Expr -> TVal
 interpretExpr funcDict scope currentCallId (A region expr) =
-  --let d = Debug.log "INTERPRETeXPR" (scope, expr) in
+  let d = Debug.log "INTERPRETeXPR" (scope, expr) in
   case expr of
     AST.Literal literal ->
       case literal of
@@ -73,7 +73,7 @@ interpretExpr funcDict scope currentCallId (A region expr) =
           |> Utils.getMaybe "not in scope"
 
         _ ->
-          Debug.crash "TODO: scopes"
+          Debug.crash "TODO: more homes"
 
     AST.Let defs innerExpr ->
       let
@@ -118,27 +118,45 @@ interpretExpr funcDict scope currentCallId (A region expr) =
       in
         tryBranches branches
 
-    --AST.App funExpr argExpr ->
-    --  let
-    --    fun =
-    --      interpretExpr funcDict scope currentCallId funExpr
+    AST.App funExpr argExpr ->
+      let
+        fun =
+          interpretExpr funcDict scope currentCallId funExpr
 
-    --    arg =
-    --      interpretExpr funcDict scope currentCallId argExpr
+        arg =
+          interpretExpr funcDict scope currentCallId argExpr
 
-    --    freshCallId =
-    --      currentCallId + 1
-    --  in
-    --    interpretExpr XXX
+        freshCallId =
+          currentCallId + 1
+      in
+        case fun of
+          (ClosureV closureAttrs, _) ->
+            let
+              paramScope =
+                Dict.fromList [(closureAttrs.lambda.varName, arg)]
+
+              totalScope =
+                Dict.union paramScope closureAttrs.closureScope
+            in
+              -- TODO: function call trace
+              interpretExpr
+                funcDict
+                totalScope
+                freshCallId
+                closureAttrs.lambda.expr
+
+          _ ->
+            Debug.crash "app of a non-function"
 
     AST.Lambda (AST.A _ pattern) bodyExpr ->
       ( ClosureV
           { sourceRegion = region
           , closureScope = scope
           , lambda =
-              ( getVarName pattern |> Utils.getMaybe "not a var pattern"
-              , bodyExpr
-              )
+              { varName =
+                  getVarName pattern |> Utils.getMaybe "not a var pattern"
+              , expr = bodyExpr
+              }
           }
       , Trace.Literal currentCallId region
       )
