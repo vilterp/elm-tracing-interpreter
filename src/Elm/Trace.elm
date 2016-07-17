@@ -10,6 +10,10 @@ type alias FuncDict =
   Dict FuncIdent AST.Def
 
 
+type alias Scope =
+  Dict String TVal
+
+
 type alias FuncIdent =
   (AST.PackageName, AST.ModuleName, String)
 

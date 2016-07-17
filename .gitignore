@@ -3,3 +3,4 @@ node_modules
 public
 empty-elm-dir
 index.html
+src/Test.elm

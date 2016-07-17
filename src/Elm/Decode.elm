@@ -83,7 +83,11 @@ jsonDecHome =
 
 jsonDecExpr : JsDec.Decoder Expr
 jsonDecExpr =
-   jsonDecAnnotated jsonDecRegion (jsonDecExpr' jsonDecRegion (JsDec.succeed ()) jsonDecCanonicalVar jsonDecCanonicalType)
+   let
+      decDef =
+         lazy (\_ -> jsonDecDef)
+  in
+      jsonDecAnnotated jsonDecRegion (jsonDecExpr' jsonDecRegion decDef jsonDecCanonicalVar jsonDecCanonicalType)
 
 
 region =

@@ -72,7 +72,7 @@ type Home  =
 
 
 type alias Expr =
-  Annotated Region (Expr' Region () CanonicalVar CanonicalType)
+  Annotated Region (Expr' Region Def CanonicalVar CanonicalType)
 
 
 type alias ParamExpr ann def var typ =

@@ -36,8 +36,9 @@ buildFunctionDict modules =
     |> Dict.fromList
 
 
-interpretExpr : FuncDict -> CallId -> Expr -> TVal
-interpretExpr funcDict currentCallId (A region expr) =
+interpretExpr : FuncDict -> Scope -> CallId -> Expr -> TVal
+interpretExpr funcDict scope currentCallId (A region expr) =
+  --let d = Debug.log "INTERPRETeXPR" (scope, expr) in
   case expr of
     AST.Literal literal ->
       case literal of
@@ -64,10 +65,34 @@ interpretExpr funcDict currentCallId (A region expr) =
             |> Dict.get funcIdent
             |> Utils.getMaybe "func not found"
             |> (\(AST.Def _ _ expr _) -> expr)
-            |> interpretExpr funcDict currentCallId
+            |> interpretExpr funcDict Dict.empty currentCallId
+
+        Local ->
+          scope
+          |> Dict.get name
+          |> Utils.getMaybe "not in scope"
 
         _ ->
           Debug.crash "TODO: scopes"
+
+    AST.Let defs innerExpr ->
+      let
+        -- It seems the compiler sorts everything for us
+        -- although it seems like Canonicalize.Sort is not getting called
+        -- will have to fix that
+        letScope =
+          defs
+          |> List.foldl
+            (\(Def _ (AST.A _ pattern) defExpr _) scopeStep ->
+              let d = Debug.log "inserting" (getVarName pattern |> Utils.getMaybe "not a var pattern") in
+              scopeStep
+              |> Dict.insert
+                  (getVarName pattern |> Utils.getMaybe "not a var pattern")
+                  (interpretExpr funcDict scopeStep currentCallId defExpr)
+            )
+            scope
+      in
+        interpretExpr funcDict letScope currentCallId innerExpr
 
     --AST.Binop op leftExpr rightExpr ->
     --  -- TODO: fake regions
@@ -92,3 +117,13 @@ interpretExpr funcDict currentCallId (A region expr) =
 
     _ ->
       Debug.crash "TODO"
+
+
+getVarName : AST.Pattern' a b -> Maybe String
+getVarName pattern =
+  case pattern of
+    VarPattern name ->
+      Just name
+
+    _ ->
+      Nothing
