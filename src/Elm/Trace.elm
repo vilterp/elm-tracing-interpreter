@@ -54,10 +54,20 @@ type alias ClosureAttrs =
 
 
 type Trace
-  = FuncCall CallId Trace -- inner trace...
-  | Literal CallId AST.Region -- the call in which the literal was used (?)
-  -- maybe need Atom & Data?
-  -- TODO: case branch & if branch
+  = FuncCallT CallId Trace -- inner trace...
+  | LiteralT CallId AST.Region -- the call in which the literal was used (?)
+  | IfT
+      { ifExpr : AST.Expr
+      , decidingValue : TVal
+      , innerTrace : Trace
+      }
+  | CaseT
+      { caseExpr : AST.Expr
+      , decidingValue : TVal
+      , caseIdx : Int
+      , innerTrace : Trace
+      }
+  -- TODO: maybe Atom & Data?
 
 
 type alias Call =

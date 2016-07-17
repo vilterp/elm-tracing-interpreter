@@ -29,7 +29,7 @@ interpretMainYo funcDict =
                 , closureScope = Dict.empty
                 , lambda = { varName = "", expr = expr }
                 }
-              , Trace.Literal -1 region -- behind the bubbles of spacetime...
+              , LiteralT -1 region -- behind the bubbles of spacetime...
               )
           , name = Just "mainYo"
           , args = []
@@ -76,11 +76,14 @@ addCall theCallId region call state =
 
 
 interpretExpr : FuncDict -> Scope -> InterpState -> Expr -> (TVal, InterpState)
-interpretExpr funcDict scope state (A region expr) =
+interpretExpr funcDict scope state locatedExpr =
   let
     --d = Debug.log "INTERPRETeXPR" (scope, expr)
     sameState tVal =
       (tVal, state)
+
+    (A region expr) =
+      locatedExpr
 
     interpretSubexpr : InterpState -> Expr -> (TVal, InterpState)
     interpretSubexpr stateAlready subExpr =
@@ -90,13 +93,13 @@ interpretExpr funcDict scope state (A region expr) =
       AST.Literal literal ->
         ( case literal of
           IntNum x ->
-            (IntV x, Trace.Literal state.currentCallId region)
+            (IntV x, LiteralT state.currentCallId region)
 
           Str str ->
-            (StringV str, Trace.Literal state.currentCallId region)
+            (StringV str, LiteralT state.currentCallId region)
 
           Boolean b ->
-            (BoolV b, Trace.Literal state.currentCallId region)
+            (BoolV b, LiteralT state.currentCallId region)
 
           _ ->
             Debug.crash "TODO"
@@ -156,30 +159,40 @@ interpretExpr funcDict scope state (A region expr) =
         in
           (result, bodyState)
 
-      AST.If branches otherwiseExpr ->
-        let
-          tryBranches : InterpState -> List (Expr, Expr) -> (TVal, InterpState)
-          tryBranches stateAlready branches =
-            case branches of
-              (condExpr, bodyExpr)::rest ->
+      AST.If condPairs ifFalseExpr ->
+        case condPairs of
+          [(condExpr, ifTrueExpr)] ->
+            let
+              (condValue, newState) =
+                interpretSubexpr state condExpr
+
+              mkResult chosenExpr =
                 let
-                  (condValue, newState) =
-                    interpretSubexpr stateAlready condExpr
+                  ((val, trace), newNewState) =
+                    interpretSubexpr newState chosenExpr
                 in
-                  case condValue of
-                    (BoolV True, _) ->
-                      interpretSubexpr newState bodyExpr
+                  ( ( val
+                    , IfT
+                        { ifExpr = locatedExpr
+                        , decidingValue = condValue
+                        , innerTrace = trace
+                        }
+                    )
+                  , newNewState
+                  )
+            in
+              case condValue of
+                (BoolV True, _) ->
+                  mkResult ifTrueExpr
 
-                    (BoolV False, _) ->
-                      tryBranches newState rest
+                (BoolV False, _) ->
+                  mkResult ifFalseExpr
 
-                    _ ->
-                      Debug.crash "cond value not true or false"
+                _ ->
+                  Debug.crash "cond value not true or false"
 
-              [] ->
-                interpretSubexpr stateAlready otherwiseExpr
-        in
-          tryBranches state branches
+          _ ->
+            Debug.crash "I thought multi-way ifs were no longer a thing"
 
       AST.App funExpr argExpr ->
         let
@@ -222,7 +235,7 @@ interpretExpr funcDict scope state (A region expr) =
 
                 -- make a new call, return it in subcalls
               in
-                ( (result, FuncCall freshCallId innerTrace)
+                ( (result, FuncCallT freshCallId innerTrace)
                 , newNewNewState
                   |> addCall freshCallId region newCall
                   |> Debug.log "newnewnewnewstate"
@@ -241,7 +254,7 @@ interpretExpr funcDict scope state (A region expr) =
                 , expr = bodyExpr
                 }
             }
-        , Trace.Literal state.currentCallId region
+        , LiteralT state.currentCallId region
         )
         |> sameState
 

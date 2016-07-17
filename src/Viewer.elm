@@ -72,11 +72,14 @@ viewValue overTrace (val, trace) =
   let
     pinCall =
       case trace of
-        FuncCall callId innerTrace ->
+        FuncCallT callId innerTrace ->
           onClick (PinCall callId)
 
-        Literal callId _ ->
+        LiteralT callId _ ->
           onClick (PinCall callId)
+
+        _ ->
+          Debug.crash "TODO"
 
     literalAttrs litStyle =
       [ pinCall

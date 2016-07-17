@@ -41,7 +41,7 @@ view model callTree tVal source funcDict =
       model.overTrace
       `Maybe.andThen` (\trace ->
         case trace of
-          Literal callId sourceSpan ->
+          LiteralT callId sourceSpan ->
             Just (callId, sourceSpan)
 
           _ ->
