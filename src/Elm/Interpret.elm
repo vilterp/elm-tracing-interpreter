@@ -94,6 +94,30 @@ interpretExpr funcDict scope currentCallId (A region expr) =
       in
         interpretExpr funcDict letScope currentCallId innerExpr
 
+    AST.If branches otherwiseExpr ->
+      let
+        tryBranches branches =
+          case branches of
+            (condExpr, bodyExpr)::rest ->
+              let
+                condValue =
+                  interpretExpr funcDict scope currentCallId condExpr
+              in
+                case condValue of
+                  (BoolV True, _) ->
+                    interpretExpr funcDict scope currentCallId bodyExpr
+
+                  (BoolV False, _) ->
+                    tryBranches rest
+
+                  _ ->
+                    Debug.crash "cond value not true or false"
+
+            [] ->
+              interpretExpr funcDict scope currentCallId otherwiseExpr
+      in
+        tryBranches branches
+
     --AST.Binop op leftExpr rightExpr ->
     --  -- TODO: fake regions
     --  interpretExpr funcDict 0 (App (App op leftExpr) rightExpr)
