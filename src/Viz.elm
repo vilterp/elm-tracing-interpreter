@@ -12,6 +12,7 @@ import Model exposing (..)
 import Viewer exposing (..)
 import Style
 import Utils exposing (..)
+import FlameGraph
 --import ExampleData
 
 
@@ -54,7 +55,7 @@ view model callTree tVal source funcDict =
           , button [ onClick RequestEdit ] [ text "Edit" ]
           ]
       , div [] [ viewStack model callTree ]
-      , text (toString (Dict.keys callTree))
+      , FlameGraph.view callTree
       ]
 
 

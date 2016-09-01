@@ -5,7 +5,7 @@
     "url": "https://github.com/vilterp/elm-reversible-interpreter.git"
   },
   "version": "0.0.0",
-  "description": "visual functional programming language",
+  "description": "execute your elm programs in reverse",
   "dependencies": {
     "body-parser": "^1.12.4",
     "express": "^4.12.3",

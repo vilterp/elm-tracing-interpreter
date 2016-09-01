@@ -162,3 +162,38 @@ viewValue overTrace (val, trace) =
               )
           , text "}>"
           ]
+
+
+valueToString : Val -> String
+valueToString val =
+  case val of
+    IntV int ->
+      toString int
+
+    StringV str ->
+      "\"" ++ str ++ "\"" -- TODO escape...
+
+    BoolV bool ->
+      toString bool
+
+    ADTV { constructorName, args } ->
+      constructorName ++ " " ++ (String.join " " (args |> List.map (fst >> valueToString)))
+
+    RecordV attrs ->
+      let
+        attrsString =
+          attrs
+          |> Dict.toList
+          |> List.map (\(k, (val, _)) -> k ++ " = " ++ (valueToString val))
+      in
+        "{" ++ (String.join ", " attrsString) ++ "}"
+
+    ClosureV closureAttrs ->
+      let
+        scopeString =
+          closureAttrs.closureScope
+          |> Dict.toList
+          |> List.map (\(name, (val, _)) -> name ++ ": " ++ (valueToString val))
+          |> String.join ", "
+      in
+        "<Closure scope:{" ++ scopeString ++ "}>"
