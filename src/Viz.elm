@@ -49,12 +49,14 @@ view model callTree tVal source funcDict =
             Nothing
       )
   in
-    div [style [("display", "flex")]]
-      [ div []
-          [ div [] [ viewSource maybeOverSpan source ]
-          , button [ onClick RequestEdit ] [ text "Edit" ]
+    div []
+      [ div [style [("display", "flex")]]
+          [ div []
+              [ div [] [ viewSource maybeOverSpan source ]
+              , button [ onClick RequestEdit ] [ text "Edit" ]
+              ]
+          , div [] [ viewStack model callTree ]
           ]
-      , div [] [ viewStack model callTree ]
       , FlameGraph.view callTree
       ]
 

@@ -57,12 +57,14 @@ type Trace
   = FuncCallT CallId Trace -- inner trace...
   | LiteralT CallId AST.Region -- the call in which the literal was used (?)
   | IfT
-      { ifExpr : AST.Expr
+      { callId : CallId
+      , ifExpr : AST.Expr
       , decidingValue : TVal
       , innerTrace : Trace
       }
   | CaseT
-      { caseExpr : AST.Expr
+      { callId : CallId
+      , caseExpr : AST.Expr
       , decidingValue : TVal
       , caseIdx : Int
       , innerTrace : Trace

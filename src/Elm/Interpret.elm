@@ -164,7 +164,8 @@ interpretExpr funcDict scope state locatedExpr =
                 in
                   ( ( val
                     , IfT
-                        { ifExpr = locatedExpr
+                        { callId = state.currentCallId
+                        , ifExpr = locatedExpr
                         , decidingValue = condValue
                         , innerTrace = trace
                         }
