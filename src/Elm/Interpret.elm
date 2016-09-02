@@ -24,11 +24,12 @@ interpretMainYo funcDict =
           expr
 
         rootCall =
-          { closure =
-              ( { sourceRegion = region
-                , closureScope = Dict.empty
-                , lambda = { varName = "", expr = expr }
-                }
+          { func =
+              ( ClosureV
+                  { sourceRegion = region
+                  , closureScope = Dict.empty
+                  , lambda = { varName = "", expr = expr }
+                  }
               , LiteralT -1 region -- behind the bubbles of spacetime...
               )
           , name = Just "mainYo"
@@ -217,7 +218,7 @@ interpretExpr funcDict scope state locatedExpr =
                     closureAttrs.lambda.expr
 
                 newCall =
-                  { closure = (closureAttrs, closureTrace)
+                  { func = (ClosureV closureAttrs, closureTrace)
                   , name = Nothing
                   , args = [arg]
                   , result = (result, innerTrace)
@@ -238,7 +239,7 @@ interpretExpr funcDict scope state locatedExpr =
                 )
 
             _ ->
-              Debug.crash "app of a non-function"
+              Debug.crash ("uknown function " ++ (toString fun))
 
       AST.Lambda (AST.A _ pattern) bodyExpr ->
         ( ClosureV
@@ -254,26 +255,69 @@ interpretExpr funcDict scope state locatedExpr =
         )
         |> sameState
 
-      --AST.Binop op leftExpr rightExpr ->
-      --  -- TODO: fake regions
-      --  interpretExpr funcDict 0 (App (App op leftExpr) rightExpr)
+      Binop { home, name } leftExpr rightExpr ->
+        case home of
+          ModuleHome { package, modul } ->
+            case (package, modul) of
+              ("elm-lang/core", ["Basics"]) ->
+                let
+                  (leftTVal, state') =
+                    interpretExpr funcDict scope state leftExpr
 
-      --  -- TODO: move to app
-      --  case home of
-      --    ModuleHome { package, modul } ->
-      --      let
-      --        funcIdent =
-      --          (package, modul, name)
+                  (rightTVal, state'') =
+                    interpretExpr funcDict scope state' rightExpr
 
-      --        func =
-      --          funcDict
-      --          |> Dict.get funcIdent
-      --          |> Utils.getMaybe "couldn't find function"
-      --      in
-      --        Debug.crash (toString func)
+                  resultVal =
+                    case (name, fst leftTVal, fst rightTVal) of
+                      ("*", IntV leftInt, IntV rightInt) ->
+                        IntV (leftInt * rightInt)
 
-      --    _ ->
-      --      Debug.crash "TODO"
+                      ("+", IntV leftInt, IntV rightInt) ->
+                        IntV (leftInt + rightInt)
+
+                      ("-", IntV leftInt, IntV rightInt) ->
+                        IntV (leftInt - rightInt)
+
+                      ("==", leftVal, rightVal) ->
+                        BoolV (leftVal == rightVal)
+
+                      ("&&", BoolV leftB, BoolV rightB) ->
+                        BoolV (leftB && rightB)
+
+                      ("||", BoolV leftB, BoolV rightB) ->
+                        BoolV (leftB || rightB)
+
+                      _ ->
+                        Debug.crash ("unknown binop " ++ toString (name, fst leftTVal, fst rightTVal))
+
+                  freshCallId =
+                    state''.currentCallId + 1
+
+                  resultTVal =
+                    (resultVal, FuncCallT freshCallId BuiltinT)
+
+                  newCall =
+                    { func = (BuiltinFun { home = home, name = name }, BuiltinT)
+                    , name = Just name
+                    , args = [leftTVal, rightTVal]
+                    , result = (resultVal, BuiltinT)
+                    , subcalls = []
+                    , caller = Just state.currentCallId
+                    }
+                in
+                  ( resultTVal
+                  , { state''
+                        | currentCallId = freshCallId
+                        , subcallsAtThisLevel = state''.subcallsAtThisLevel ++ [(freshCallId, region)]
+                        , callTree = state''.callTree |> Dict.insert freshCallId newCall
+                    }
+                  )
+
+              _ ->
+                Debug.crash ("unknown binop" ++ toString { home=home, name=name })
+
+          _ ->
+            Debug.crash ("unknown home: " ++ (toString home))
 
       _ ->
         Debug.crash "TODO"

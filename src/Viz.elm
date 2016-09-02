@@ -70,7 +70,7 @@ viewStack model callTree =
       [ stackFrame.call.name
         |> Maybe.withDefault ""
         |> \name -> strong [] [text name]
-      , viewValue Nothing (ClosureV (fst stackFrame.call.closure), snd stackFrame.call.closure)
+      , viewValue Nothing stackFrame.call.func
       , text ": ("
       , viewSubcallWidget (List.map fst stackFrame.call.subcalls) stackFrame.selectedSubcall
       , text ")"

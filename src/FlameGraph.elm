@@ -137,7 +137,7 @@ flameGraph (CallNode node) =
 
 
 traceColor =
-  Color.red
+  Color.rgba 204 0 0 0.5 -- red
 
 traceLineWidth =
   3
@@ -153,22 +153,37 @@ viewTrace callTree flameGraphDia trace =
           |> Dict.get callId
           |> Utils.getMaybe ("no such call: " ++ toString callId)
           |> .args
+
+        pathToInnerTrace fromTag it =
+          case it of
+            Trace.BuiltinT ->
+              let d = Debug.log "builtin inner trace" () in
+              empty
+
+            _ ->
+              path
+                [ locForTag flameGraphDia fromTag
+                , locForTrace it flameGraphDia
+                ]
+                { defaultLine
+                    | color = traceColor
+                    , width = traceLineWidth
+                }
+
+        viewArgTrace idx argTrace =
+          zcat
+            [ viewTrace callTree flameGraphDia argTrace
+            , pathToInnerTrace (ArgTag { callId = callId, idx = idx }) argTrace
+            ]
       in
         zcat
           [ circle 4 (justSolidFill traceColor)
             |> move (locForTrace trace flameGraphDia)
           , viewTrace callTree flameGraphDia innerTrace
-          , path
-              [ locForTrace trace flameGraphDia
-              , locForTrace innerTrace flameGraphDia
-              ]
-              { defaultLine
-                  | color = traceColor
-                  , width = traceLineWidth
-              }
+          , pathToInnerTrace (ResultTag callId) innerTrace
           , args
             |> Debug.log "ARGS"
-            |> List.map (snd >> viewTrace callTree flameGraphDia)
+            |> List.indexedMap (\idx (_, argT) -> viewArgTrace idx argT)
             |> zcat
           ]
 
@@ -182,27 +197,33 @@ viewTrace callTree flameGraphDia trace =
     Trace.CaseT caseAttrs ->
       viewTrace callTree flameGraphDia caseAttrs.innerTrace
 
+    Trace.BuiltinT ->
+      empty
+
 
 locForTrace : Trace.Trace -> Diagram Tag a -> Point
 locForTrace trace flameGraphDia =
-  let
-    locForTag tag =
-      flameGraphDia
-      |> Query.getCoords [tag]
-      |> Utils.getMaybe ("tag not found:" ++ toString tag)
-  in
-    case trace of
-      Trace.FuncCallT callId _ ->
-        locForTag (ResultTag callId)
+  case trace of
+    Trace.FuncCallT callId _ ->
+      locForTag flameGraphDia (ResultTag callId)
 
-      Trace.LiteralT callId _ ->
-        locForTag (LiteralAreaTag callId)
+    Trace.LiteralT callId _ ->
+      locForTag flameGraphDia (LiteralAreaTag callId)
 
-      Trace.IfT ifAttrs ->
-        locForTrace ifAttrs.innerTrace flameGraphDia
+    Trace.IfT ifAttrs ->
+      locForTrace ifAttrs.innerTrace flameGraphDia
 
-      Trace.CaseT caseAttrs ->
-        locForTrace caseAttrs.innerTrace flameGraphDia
+    Trace.CaseT caseAttrs ->
+      locForTrace caseAttrs.innerTrace flameGraphDia
+
+    Trace.BuiltinT ->
+      Debug.crash "getting loc of builtin trace"
+
+
+locForTag flameGraphDia tag =
+  flameGraphDia
+  |> Query.getCoords [tag]
+  |> Utils.getMaybe ("tag not found:" ++ toString tag)
 
 
 fromTraceCallTree : Trace.CallTree -> CallTree
@@ -216,8 +237,7 @@ fromTraceCallTree trace =
         CallNode
           { id = callId
           , name =
-              call.name
-              |> Maybe.withDefault (Viewer.valueToString (Trace.ClosureV (fst call.closure)))
+              call.name |> Maybe.withDefault (call.func |> fst |> Viewer.valueToString)
           , args = call.args
           , result = call.result
           , subcalls = call.subcalls |> List.map (fst >> recurse)

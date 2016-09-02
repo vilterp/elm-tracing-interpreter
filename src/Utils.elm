@@ -36,3 +36,14 @@ getResult res =
 
     Err y ->
       y
+
+
+-- @#$%!@#
+--withAlpha : Color -> Float -> Color
+--withAlpha color alpha =
+--  case color of
+--    HSLA h s l _ ->
+--      HSLA h s l alpha
+
+--    RGBA r g b _ ->
+--      RGBA r g b alpha

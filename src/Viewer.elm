@@ -163,6 +163,9 @@ viewValue overTrace (val, trace) =
           , text "}>"
           ]
 
+      BuiltinFun {home, name} ->
+        text ("<Builtin `" ++ name ++ "`>")
+
 
 valueToString : Val -> String
 valueToString val =
@@ -197,3 +200,6 @@ valueToString val =
           |> String.join ", "
       in
         "<Closure scope:{" ++ scopeString ++ "}>"
+
+    BuiltinFun {home, name} ->
+      "<Builtin `" ++ name ++ "`>"

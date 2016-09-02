@@ -40,6 +40,7 @@ type Val
       }
   | RecordV (Dict String TVal)
   | ClosureV ClosureAttrs
+  | BuiltinFun AST.CanonicalVar
 
 
 type alias ClosureAttrs =
@@ -69,11 +70,12 @@ type Trace
       , caseIdx : Int
       , innerTrace : Trace
       }
+  | BuiltinT
   -- TODO: maybe Atom & Data?
 
 
 type alias Call =
-  { closure : (ClosureAttrs, Trace)
+  { func : TVal
   , name : Maybe String -- TODO: could find name based on closure's lambda's expression...
   , args : List TVal
   , result : TVal

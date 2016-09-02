@@ -212,9 +212,15 @@ view model =
 
 initialModel =
   { code =
-      """mainYo = f True 2
+      """fac n =
+  if n == 1 then
+    1
+  else
+    n * (fac (n - 1))
 
-f y x = if y then x else 5"""
+mainYo =
+  fac 3
+"""
   , result = NotStarted
   }
 
