@@ -20,6 +20,8 @@ make start
 ```
 And go to `localhost:4000`.
 
+**Note:** I've included `hacked-compiler/elm-make`, which I pre-built from my forks of elm-make and elm-compiler: [`vilterp/elm-make:json-ast`](https://github.com/vilterp/elm-make/tree/json-ast) and [`vilterp/elm-compiler:json-ast`](https://github.com/vilterp/elm-compiler/tree/json-ast). Those are built as the core tools normally are, which is a little more involved.
+
 ## How it works
 
 ```
@@ -39,11 +41,12 @@ More detail in [the Trello](https://trello.com/b/6fNpWjix/reversible-interpreter
   - doesn't even handle importing Elm code from other modules (almost there); doesn't yet reimplement things in `core` that are implemented with native code
 - visualization
   - would like to link the flame graph, value viewer, and source code viewer together a lot more.
-  - general usability & explorability…
+  - general usability & explorability… (i.e. don't show all the red lines at once; enable drilling down and following a thread)
 
 
 ## Practical challenges
 
+- Upstreaming the JSON AST compiler backend (currently it's not even a flag or anything; always does JSON. "hacking" is really a descriptive word of what I did here)
 - How to keep Elm AST types in sync with Haskell types (this may be useful for other projects though)
 - How to fit this inside of the time-travelling debugger, or generally make it usable in more places
 
