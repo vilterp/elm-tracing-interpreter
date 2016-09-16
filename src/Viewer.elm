@@ -166,6 +166,39 @@ viewValue overTrace (val, trace) =
       BuiltinFun {home, name} ->
         text ("<Builtin `" ++ name ++ "`>")
 
+      VDomNodeV node ->
+        viewVDomNode node
+
+
+viewVDomNode : VDomNode -> Html msg
+viewVDomNode node =
+  case node of
+    VDomNode name attrs children ->
+      -- TODO: highlight/click zones for traces
+      let
+        attrsDisplay =
+          attrs
+          |> List.map (\((attrName, (attrVal, valTrace)), attrTrace) ->
+            attrName ++ "=\"" ++ valueToString attrVal ++ "\""
+          )
+          |> String.join " "
+
+        openTag =
+          text ("<" ++ name ++ " " ++ attrsDisplay ++ ">")
+
+        childrenDisplay =
+          children
+          |> List.map (fst >> viewVDomNode)
+
+        closeTag =
+          text ("</" ++ name ++ ">")
+      in
+        div [] ([openTag] ++ childrenDisplay ++ [closeTag])
+
+    VDomText (theText, trace) ->
+      -- TODO: some color
+      text theText
+
 
 valueToString : Val -> String
 valueToString val =
@@ -203,3 +236,34 @@ valueToString val =
 
     BuiltinFun {home, name} ->
       "<Builtin `" ++ name ++ "`>"
+
+    VDomNodeV node ->
+      vDomNodeToString node
+
+
+vDomNodeToString : VDomNode -> String
+vDomNodeToString node =
+  case node of
+    VDomNode name attrs children ->
+      let
+        attrsDisplay =
+          attrs
+          |> List.map (\((attrName, (attrVal, valTrace)), attrTrace) ->
+            attrName ++ "=\"" ++ valueToString attrVal ++ "\""
+          )
+          |> String.join " "
+
+        openTag =
+          "<" ++ name ++ " " ++ attrsDisplay ++ ">"
+
+        childrenDisplay =
+          children
+          |> List.map (\(child, trace) -> "  " ++ vDomNodeToString child)
+
+        closeTag =
+          "</" ++ name ++ ">"
+      in
+        String.join "\n" ([openTag] ++ childrenDisplay ++ [closeTag])
+
+    VDomText (theText, trace) ->
+      theText

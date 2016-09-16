@@ -80,6 +80,14 @@ interpretExpr funcDict scope state locatedExpr =
     interpretSubexpr : InterpState -> Expr -> (TVal, InterpState)
     interpretSubexpr stateAlready subExpr =
       interpretExpr funcDict scope stateAlready subExpr
+
+    extractDef : FuncIdent -> (TVal, InterpState)
+    extractDef funcIdent =
+      funcDict
+      |> Dict.get funcIdent
+      |> Utils.getMaybe ("func not found: " ++ toString funcIdent)
+      |> (\(AST.Def _ _ expr _) -> expr)
+      |> interpretExpr funcDict Dict.empty state
   in
     case expr of
       AST.Literal literal ->
@@ -98,19 +106,23 @@ interpretExpr funcDict scope state locatedExpr =
         )
         |> sameState
 
-      AST.Var { home, name } ->
+      AST.Var {home, name} ->
         case home of
           TopLevelHome moduleName ->
+            extractDef (moduleName.package, moduleName.modul, name)
+              -- should this cound as a call? urgh
+
+          ModuleHome {package, modul} ->
             let
               funcIdent =
-                (moduleName.package, moduleName.modul, name)
+                (package, modul, name)
             in
-              funcDict
-              |> Dict.get funcIdent
-              |> Utils.getMaybe "func not found"
-              |> (\(AST.Def _ _ expr _) -> expr)
-              |> interpretExpr funcDict Dict.empty state
-              -- should this cound as a call? urgh
+              case funcIdent of
+                ("elm-lang/virtual-dom", ["Native","VirtualDom"], "text") ->
+                  ((BuiltinFun { home = home, name = name }, BuiltinT), state)
+
+                _ ->
+                  extractDef funcIdent
 
           Local ->
             scope
@@ -238,8 +250,24 @@ interpretExpr funcDict scope state locatedExpr =
                   }
                 )
 
+            (BuiltinFun {home, name}, trace) ->
+              case home of
+                ModuleHome {package, modul} ->
+                  case (package, modul, name) of
+                    ("elm-lang/virtual-dom", ["Native","VirtualDom"], "text") ->
+                      -- TODO: refactor constructing arguments & call node with above
+                      --XXX
+                      --((XXX, XXX), state)
+                      Debug.crash "TODO"
+
+                    _ ->
+                      Debug.crash "TODO"
+
+                _ ->
+                  Debug.crash ("uknown builtin: " ++ (fun |> fst |> toString))
+
             _ ->
-              Debug.crash ("uknown function " ++ (toString fun))
+              Debug.crash ("unknown function: " ++ (toString fun))
 
       AST.Lambda (AST.A _ pattern) bodyExpr ->
         ( ClosureV

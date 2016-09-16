@@ -41,6 +41,17 @@ type Val
   | RecordV (Dict String TVal)
   | ClosureV ClosureAttrs
   | BuiltinFun AST.CanonicalVar
+  -- DOM special
+  | VDomNodeV VDomNode
+
+
+type VDomNode
+  = VDomNode String (List (VDomAttr, Trace)) (List (VDomNode, Trace))
+  | VDomText (String, Trace)
+
+
+type alias VDomAttr =
+  (String, TVal)
 
 
 type alias ClosureAttrs =

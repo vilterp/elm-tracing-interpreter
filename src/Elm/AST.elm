@@ -12,16 +12,16 @@ type alias FilePath =
 
 
 type alias Module phase =
-   { name: CanonicalModuleName
-   , path: FilePath
-   , info: phase
+   { name : CanonicalModuleName
+   , path : FilePath
+   , info : phase
    }
 
 
 -- canonical module name
 type alias CanonicalModuleName  =
-   { package: PackageName
-   , modul: ModuleName
+   { package : PackageName
+   , modul : ModuleName
    }
 
 
@@ -42,22 +42,22 @@ type Def =
 
 
 type alias Facts  =
-   { dependencies: (List TopLevel)
+   { dependencies : (List TopLevel)
    }
 
 
 -- top level var
 type alias TopLevel  =
-   { topHome: CanonicalModuleName
-   , topName: String
+   { topHome : CanonicalModuleName
+   , topName : String
    }
 
 
 -- var
 
 type alias CanonicalVar =
-   { home: Home
-   , name: String
+   { home : Home
+   , name : String
    }
 
 
@@ -165,12 +165,12 @@ type Annotated annotation a =
 
 
 type alias Region  =
-   { start: Position
-   , end: Position
+   { start : Position
+   , end : Position
    }
 
 
 type alias Position  =
-   { line: Int
-   , column: Int
+   { line : Int
+   , column : Int
    }

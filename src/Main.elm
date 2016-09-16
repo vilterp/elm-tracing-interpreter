@@ -139,7 +139,13 @@ view : Model -> Html Msg
 view model =
   let
     editor =
-      textarea [ onInput UpdateText, rows 10, cols 50 ] [ text model.code ]
+      textarea
+        [ onInput UpdateText
+        , rows 10
+        , cols 50
+        , style [("font-family", "monospace")]
+        ]
+        [ text model.code ]
 
     compileButton =
       button [ onClick Compile ] [ text "Compile & Run" ]
