@@ -2,6 +2,12 @@
 
 ![image](/img/fac-screenshot.png)
 
+_Visualization of computing the factorial of 3: a flame graph with red lines representing the flow of values._
+
+- *return values may come from return values of other functions*
+- *arguments may come from return values of prior function calls*
+- *arguments can come from literals, represented as a small square to the right of the arguments of the function in which they were evaluated.*
+
 
 We love Elm because our code runs without runtime exceptions, but what if you have the wrong output? Even if we know what arguments the misbehaving function was passed to produce the bad output, we still have to start at both ends (the arguments and output) toward some point in between where something went wrong, often by inserting many log statements, recompiling, and re-running.
 
