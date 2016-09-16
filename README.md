@@ -42,7 +42,9 @@ More detail in [the Trello](https://trello.com/b/6fNpWjix/reversible-interpreter
   - doesn't even handle importing Elm code from other modules (almost there); doesn't yet reimplement things in `core` that are implemented with native code
 - visualization
   - would like to link the flame graph, value viewer, and source code viewer together a lot more.
+  - uncurrying: we interpret functions in a curried fashion, but it would be nice to collapse applications of multiple arguments to one stack frame in the visualization; currently this is only done with binary operators.
   - general usability & explorability… (i.e. don't show all the red lines at once; enable drilling down and following a thread)
+  - a nested DAG resembling [lemur](https://github.com/vilterp/lemur) instead of a flame graph? idk…
 
 
 ## Practical challenges
