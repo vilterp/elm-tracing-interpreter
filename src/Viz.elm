@@ -55,7 +55,7 @@ view model callTree tVal source funcDict =
               [ div [] [ viewSource maybeOverSpan source ]
               , button [ onClick RequestEdit ] [ text "Edit" ]
               ]
-          , div [] [ viewStack model callTree ]
+          --, div [] [ viewStack model callTree ]
           ]
       , FlameGraph.view callTree
       ]

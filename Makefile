@@ -3,6 +3,8 @@ all: empty-elm-dir
 	export LANG=en_US.UTF-8 && elm make --yes src/Main.elm --output=public/index.html
 
 deps:
+	git submodule init
+	git submodule update elm-diagrams
 	elm package install --yes
 	npm install
 

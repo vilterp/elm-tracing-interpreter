@@ -182,7 +182,7 @@ view model =
                     [ App.map
                         VizMsg
                         (Viz.view vizModel callTree tVal source funcDict)
-                    , astView
+                    --, astView
                     ]
 
                 Err interpErr ->
